@@ -6,6 +6,7 @@ class MainTabBarController: UITabBarController {
         super.viewDidLoad()
         setupTabBar()
         setupViewControllers()
+        self.selectedIndex = 1
     }
     
     private func setupTabBar() {

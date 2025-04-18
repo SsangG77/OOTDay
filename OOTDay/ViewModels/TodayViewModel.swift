@@ -13,6 +13,7 @@ class TodayViewModel {
     // MARK: - Private
     private let disposeBag = DisposeBag()
     private let outfitRelay = BehaviorRelay<Outfit?>(value: nil)
+    let closetViewModel = ClosetViewModel()
     
     init() {
         currentOutfit = outfitRelay.asDriver()
@@ -31,14 +32,24 @@ class TodayViewModel {
         
         // Initial outfit
         generateNewOutfit()
+        
+        // Subscribe to itemsDeleted to update outfit when items are deleted
+        closetViewModel.itemsDeleted
+            .subscribe(onNext: { [weak self] in
+                print("itemsDeleted received")
+                self?.generateNewOutfit()
+            })
+            .disposed(by: disposeBag)
     }
     
     private func generateNewOutfit() {
-        // TODO: Implement outfit generation logic
-        // This should consider:
-        // 1. Current weather
-        // 2. User's clothing items
-        // 3. Style matching
+        print("generateNewOutfit called")
+        if closetViewModel.isClosetEmpty() {
+            print("옷장이 비어 있습니다.")
+            outfitRelay.accept(nil)
+        } else {
+            // TODO: Implement outfit generation logic
+        }
     }
     
     private func toggleFavorite() {

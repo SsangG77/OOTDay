@@ -16,6 +16,9 @@ class ClosetViewModel {
     private let itemsRelay = BehaviorRelay<[ClothingItem]>(value: [])
     private var notificationToken: NotificationToken?
     
+    // Add a relay to notify when items are deleted
+    let itemsDeleted = PublishRelay<Void>()
+    
     init() {
         items = itemsRelay.asDriver()
         
@@ -47,5 +50,32 @@ class ClosetViewModel {
         }
         
         itemsRelay.accept(Array(items))
+    }
+    
+    // Notify when an item is deleted
+    func deleteItem(at index: Int) {
+        var currentItems = itemsRelay.value
+        guard index < currentItems.count else { return }
+        
+        // Remove the item from Realm
+        let itemToDelete = currentItems[index]
+        try? realm.write {
+            realm.delete(itemToDelete)
+        }
+        
+        // Update the itemsRelay
+        currentItems.remove(at: index)
+        itemsRelay.accept(currentItems)
+        
+        // Notify that items have been deleted
+        itemsDeleted.accept(())
+        
+        // Print statement for debugging
+        print("Item deleted")
+    }
+    
+    // Add a method to check if the closet is empty
+    func isClosetEmpty() -> Bool {
+        return itemsRelay.value.isEmpty
     }
 } 

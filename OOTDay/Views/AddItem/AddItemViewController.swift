@@ -78,18 +78,6 @@ class AddItemViewController: BaseViewController {
         $0.textColor = .black
     }
     
-    private let colorTextField = UITextField().then {
-        $0.backgroundColor = .white
-        $0.layer.cornerRadius = 12
-        $0.layer.borderWidth = 1
-        $0.layer.borderColor = UIColor.black.withAlphaComponent(0.2).cgColor
-        $0.leftView = UIView(frame: CGRect(x: 0, y: 0, width: 16, height: 0))
-        $0.leftViewMode = .always
-        $0.font = .systemFont(ofSize: 18)
-        $0.textAlignment = .center
-        $0.returnKeyType = .done
-    }
-    
     private let styleLabel = UILabel().then {
         $0.text = "Style"
         $0.font = .systemFont(ofSize: 20, weight: .medium)
@@ -150,6 +138,16 @@ class AddItemViewController: BaseViewController {
         $0.distribution = .fillEqually
     }
     
+    private let colorPickerButton = UIButton().then {
+        $0.setTitle("Select Color", for: .normal)
+        $0.setTitleColor(.black, for: .normal)
+        $0.titleLabel?.font = .systemFont(ofSize: 18)
+        $0.backgroundColor = .white
+        $0.layer.cornerRadius = 12
+        $0.layer.borderWidth = 1
+        $0.layer.borderColor = UIColor.black.withAlphaComponent(0.2).cgColor
+    }
+    
     // MARK: - Properties
     private let viewModel = AddItemViewModel()
     private let categories = ["Outer", "Top", "Bottom", "Shoes"]
@@ -173,7 +171,6 @@ class AddItemViewController: BaseViewController {
         view.addGestureRecognizer(tapGesture)
         
         // Set text field delegates
-        colorTextField.delegate = self
         styleTextField.delegate = self
     }
     
@@ -193,8 +190,8 @@ class AddItemViewController: BaseViewController {
         // Add dashed border layer
         photoContainerView.layer.addSublayer(dashedBorderLayer)
         
-        [titleLabel, photoContainerView, categoryLabel, categoryButton, colorLabel, colorTextField,
-         styleLabel, styleTextField, seasonStackView, buttonStackView].forEach {
+        [titleLabel, photoContainerView, categoryLabel, categoryButton, colorLabel,
+         styleLabel, styleTextField, seasonStackView, buttonStackView, colorPickerButton].forEach {
             view.addSubview($0)
         }
         
@@ -251,13 +248,6 @@ class AddItemViewController: BaseViewController {
             $0.leading.equalToSuperview().offset(20)
         }
         
-        colorTextField.snp.makeConstraints {
-            $0.centerY.equalTo(colorLabel)
-            $0.trailing.equalToSuperview().offset(-20)
-            $0.width.equalTo(180)
-            $0.height.equalTo(44)
-        }
-        
         styleLabel.snp.makeConstraints {
             $0.top.equalTo(colorLabel.snp.bottom).offset(24)
             $0.leading.equalToSuperview().offset(20)
@@ -280,6 +270,13 @@ class AddItemViewController: BaseViewController {
             $0.leading.trailing.equalToSuperview().inset(20)
             $0.bottom.equalTo(view.safeAreaLayoutGuide).offset(-20)
             $0.height.equalTo(50)
+        }
+        
+        colorPickerButton.snp.makeConstraints {
+            $0.centerY.equalTo(colorLabel)
+            $0.trailing.equalToSuperview().offset(-20)
+            $0.width.equalTo(180)
+            $0.height.equalTo(44)
         }
     }
     
@@ -321,6 +318,13 @@ class AddItemViewController: BaseViewController {
         saveButton.rx.tap
             .subscribe(onNext: { [weak self] in
                 self?.saveItem()
+            })
+            .disposed(by: disposeBag)
+        
+        // Color picker button
+        colorPickerButton.rx.tap
+            .subscribe(onNext: { [weak self] in
+                self?.presentColorPicker()
             })
             .disposed(by: disposeBag)
     }
@@ -383,8 +387,8 @@ class AddItemViewController: BaseViewController {
             return
         }
         
-        guard let colors = colorTextField.text, !colors.isEmpty else {
-            showAlert(message: "Please enter color(s)")
+        guard let colors = colorDisplayView.backgroundColor?.toHexString(), !colors.isEmpty else {
+            showAlert(message: "Please select a color")
             return
         }
         
@@ -429,7 +433,7 @@ class AddItemViewController: BaseViewController {
         viewModel.saveItem(
             image: image,
             category: categoryEnum,
-            colors: colors.split(separator: ",").map(String.init),
+            colors: [colors],
             style: style,
             seasons: Array(seasonEnums)
         )
@@ -456,6 +460,12 @@ class AddItemViewController: BaseViewController {
     @objc private func dismissKeyboard() {
         view.endEditing(true)
     }
+    
+    private func presentColorPicker() {
+        let colorPicker = UIColorPickerViewController()
+        colorPicker.delegate = self
+        present(colorPicker, animated: true)
+    }
 }
 
 // MARK: - UIImagePickerControllerDelegate
@@ -477,6 +487,20 @@ extension AddItemViewController: UITextFieldDelegate {
         return true
     }
 }
+
+// MARK: - UIColorPickerViewControllerDelegate
+extension AddItemViewController: UIColorPickerViewControllerDelegate {
+    func colorPickerViewControllerDidSelectColor(_ viewController: UIColorPickerViewController) {
+        let selectedColor = viewController.selectedColor
+        print("Color selected: \(selectedColor.toHexString())")
+        DispatchQueue.main.async {
+            // self.colorDisplayView.backgroundColor = selectedColor
+            self.colorPickerButton.backgroundColor = selectedColor
+        }
+        viewController.dismiss(animated: true, completion: nil)
+    }
+}
+
 
 #Preview {
     AddItemViewController()

@@ -58,14 +58,6 @@ class ClosetViewController: BaseViewController {
         return cv
     }()
     
-    private let cancelButton = UIButton(type: .system).then {
-        $0.setTitle("Cancel", for: .normal)
-        $0.titleLabel?.font = .systemFont(ofSize: 18, weight: .semibold)
-        $0.setTitleColor(.white, for: .normal)
-        $0.backgroundColor = .black
-        $0.layer.cornerRadius = 25
-    }
-    
     // MARK: - Properties
     private let viewModel = ClosetViewModel()
     private var selectedCategoryIndex = 0 {
@@ -85,7 +77,7 @@ class ClosetViewController: BaseViewController {
     override func setupViews() {
         super.setupViews()
         
-        [titleLabel, addButton, categoryStackView, selectedCategoryIndicator, collectionView, cancelButton].forEach {
+        [titleLabel, addButton, categoryStackView, selectedCategoryIndicator, collectionView].forEach {
             view.addSubview($0)
         }
         
@@ -95,6 +87,10 @@ class ClosetViewController: BaseViewController {
         
         categories[0].isSelected = true
         updateSelectedCategory()
+        
+        // Add a long press gesture recognizer to the collection view for item deletion
+        let longPressGesture = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPressGesture(_:)))
+        collectionView.addGestureRecognizer(longPressGesture)
     }
     
     override func setupConstraints() {
@@ -126,13 +122,7 @@ class ClosetViewController: BaseViewController {
         collectionView.snp.makeConstraints {
             $0.top.equalTo(categoryStackView.snp.bottom).offset(16)
             $0.leading.trailing.equalToSuperview()
-            $0.bottom.equalTo(cancelButton.snp.top).offset(-16)
-        }
-        
-        cancelButton.snp.makeConstraints {
-            $0.leading.trailing.equalToSuperview().inset(20)
             $0.bottom.equalTo(view.safeAreaLayoutGuide).offset(-20)
-            $0.height.equalTo(50)
         }
     }
     
@@ -150,13 +140,6 @@ class ClosetViewController: BaseViewController {
         addButton.rx.tap
             .subscribe(onNext: { [weak self] in
                 self?.presentAddItemViewController()
-            })
-            .disposed(by: disposeBag)
-        
-        // Bind cancel button
-        cancelButton.rx.tap
-            .subscribe(onNext: { [weak self] in
-                self?.dismiss(animated: true)
             })
             .disposed(by: disposeBag)
         
@@ -205,6 +188,27 @@ class ClosetViewController: BaseViewController {
         let nav = UINavigationController(rootViewController: addItemVC)
         nav.modalPresentationStyle = .fullScreen
         present(nav, animated: true)
+    }
+    
+    // Add a method to handle the long press gesture
+    @objc private func handleLongPressGesture(_ gesture: UILongPressGestureRecognizer) {
+        let point = gesture.location(in: collectionView)
+        guard let indexPath = collectionView.indexPathForItem(at: point) else { return }
+        
+        if gesture.state == .began {
+            // Show an alert to confirm deletion
+            let alert = UIAlertController(title: "Delete Item", message: "Are you sure you want to delete this item?", preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
+            alert.addAction(UIAlertAction(title: "Delete", style: .destructive, handler: { [weak self] _ in
+                self?.deleteItem(at: indexPath)
+            }))
+            present(alert, animated: true, completion: nil)
+        }
+    }
+    
+    // Add a method to delete the item from the view model
+    private func deleteItem(at indexPath: IndexPath) {
+        viewModel.deleteItem(at: indexPath.row)
     }
 }
 

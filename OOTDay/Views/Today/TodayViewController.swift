@@ -79,6 +79,15 @@ class TodayViewController: BaseViewController {
         $0.layer.cornerRadius = 20
     }
     
+    // Add a label to display when there are no outfits
+    private let emptyOutfitMessageLabel = UILabel().then {
+        $0.text = "옷장이 비어있어요!"
+        $0.font = .systemFont(ofSize: 24, weight: .bold)
+        $0.textColor = .black
+        $0.textAlignment = .center
+        $0.isHidden = true // Initially hidden
+    }
+    
     // MARK: - Properties
     private let viewModel = TodayViewModel()
     
@@ -87,6 +96,11 @@ class TodayViewController: BaseViewController {
         super.viewDidLoad()
         view.backgroundColor = UIColor(red: 247/255, green: 143/255, blue: 67/255, alpha: 1)
         updateWeatherInfo()
+        
+        // Set the current date in the format 'Tue, Apr 23'
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "E, MMM d"
+        dateLabel.text = dateFormatter.string(from: Date())
     }
     
     // MARK: - Setup
@@ -109,6 +123,9 @@ class TodayViewController: BaseViewController {
         topImageView.image = UIImage(named: "jacket")
         bottomImageView.image = UIImage(named: "pants")
         shoesImageView.image = UIImage(named: "shoes")
+        
+        // In setupViews, add the emptyOutfitMessageLabel to the view
+        view.addSubview(emptyOutfitMessageLabel)
     }
     
     override func setupConstraints() {
@@ -161,6 +178,12 @@ class TodayViewController: BaseViewController {
             $0.bottom.equalTo(view.safeAreaLayoutGuide).offset(-20)
             $0.height.equalTo(60)
         }
+        
+        // In setupConstraints, set constraints for emptyOutfitMessageLabel
+        emptyOutfitMessageLabel.snp.makeConstraints {
+            $0.center.equalToSuperview()
+            $0.leading.trailing.equalToSuperview().inset(20)
+        }
     }
     
     override func setupBindings() {
@@ -176,6 +199,12 @@ class TodayViewController: BaseViewController {
             .drive(onNext: { [weak self] outfit in
                 self?.updateOutfit(outfit)
             })
+            .disposed(by: disposeBag)
+        
+        // Subscribe to closet items to update emptyOutfitMessageLabel visibility
+        viewModel.closetViewModel.items
+            .map { !$0.isEmpty }
+            .drive(emptyOutfitMessageLabel.rx.isHidden)
             .disposed(by: disposeBag)
     }
     
