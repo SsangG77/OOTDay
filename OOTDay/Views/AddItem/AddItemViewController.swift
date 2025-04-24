@@ -84,16 +84,14 @@ class AddItemViewController: BaseViewController {
         $0.textColor = .black
     }
     
-    private let styleTextField = UITextField().then {
+    private let styleButton = UIButton().then {
+        $0.setTitle("Select Style", for: .normal)
+        $0.setTitleColor(.black, for: .normal)
+        $0.titleLabel?.font = .systemFont(ofSize: 18)
         $0.backgroundColor = .white
         $0.layer.cornerRadius = 12
         $0.layer.borderWidth = 1
         $0.layer.borderColor = UIColor.black.withAlphaComponent(0.2).cgColor
-        $0.leftView = UIView(frame: CGRect(x: 0, y: 0, width: 16, height: 0))
-        $0.leftViewMode = .always
-        $0.font = .systemFont(ofSize: 18)
-        $0.textAlignment = .center
-        $0.returnKeyType = .done
     }
     
     private let seasonStackView = UIStackView().then {
@@ -159,6 +157,9 @@ class AddItemViewController: BaseViewController {
     
     private var selectedSeasons: Set<String> = []
     
+    // Update styles array to use Korean names
+    private let styles = ["캐주얼", "포멀", "스포티", "빈티지", "보헤미안", "시크", "프레피", "펑크"]
+    
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -169,9 +170,6 @@ class AddItemViewController: BaseViewController {
         // Add tap gesture to dismiss keyboard
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
         view.addGestureRecognizer(tapGesture)
-        
-        // Set text field delegates
-        styleTextField.delegate = self
     }
     
     override func viewDidLayoutSubviews() {
@@ -191,7 +189,7 @@ class AddItemViewController: BaseViewController {
         photoContainerView.layer.addSublayer(dashedBorderLayer)
         
         [titleLabel, photoContainerView, categoryLabel, categoryButton, colorLabel,
-         styleLabel, styleTextField, seasonStackView, buttonStackView, colorPickerButton].forEach {
+         styleLabel, styleButton, seasonStackView, buttonStackView, colorPickerButton].forEach {
             view.addSubview($0)
         }
         
@@ -253,7 +251,7 @@ class AddItemViewController: BaseViewController {
             $0.leading.equalToSuperview().offset(20)
         }
         
-        styleTextField.snp.makeConstraints {
+        styleButton.snp.makeConstraints {
             $0.centerY.equalTo(styleLabel)
             $0.trailing.equalToSuperview().offset(-20)
             $0.width.equalTo(180)
@@ -327,6 +325,13 @@ class AddItemViewController: BaseViewController {
                 self?.presentColorPicker()
             })
             .disposed(by: disposeBag)
+        
+        // Style button
+        styleButton.rx.tap
+            .subscribe(onNext: { [weak self] in
+                self?.showStyleActionSheet()
+            })
+            .disposed(by: disposeBag)
     }
     
     // MARK: - Private Methods
@@ -387,13 +392,13 @@ class AddItemViewController: BaseViewController {
             return
         }
         
-        guard let colors = colorDisplayView.backgroundColor?.toHexString(), !colors.isEmpty else {
+        guard let colors = colorPickerButton.backgroundColor?.toHexString(), !colors.isEmpty else {
             showAlert(message: "Please select a color")
             return
         }
         
-        guard let style = styleTextField.text, !style.isEmpty else {
-            showAlert(message: "Please enter style")
+        guard let style = styleButton.titleLabel?.text, !style.isEmpty else {
+            showAlert(message: "Please select a style")
             return
         }
         
@@ -433,7 +438,7 @@ class AddItemViewController: BaseViewController {
         viewModel.saveItem(
             image: image,
             category: categoryEnum,
-            colors: [colors],
+            color: colors,
             style: style,
             seasons: Array(seasonEnums)
         )
@@ -465,6 +470,28 @@ class AddItemViewController: BaseViewController {
         let colorPicker = UIColorPickerViewController()
         colorPicker.delegate = self
         present(colorPicker, animated: true)
+    }
+    
+    private func showStyleActionSheet() {
+        let alert = UIAlertController(title: "Select Style", message: nil, preferredStyle: .actionSheet)
+        
+        styles.forEach { style in
+            let action = UIAlertAction(title: style, style: .default) { [weak self] _ in
+                self?.styleButton.setTitle(style, for: .normal)
+            }
+            alert.addAction(action)
+        }
+        
+        let cancelAction = UIAlertAction(title: "Cancel", style: .cancel)
+        alert.addAction(cancelAction)
+        
+        // iPad support
+        if let popoverController = alert.popoverPresentationController {
+            popoverController.sourceView = styleButton
+            popoverController.sourceRect = styleButton.bounds
+        }
+        
+        present(alert, animated: true)
     }
 }
 

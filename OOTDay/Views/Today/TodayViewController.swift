@@ -71,14 +71,6 @@ class TodayViewController: BaseViewController {
         $0.layer.cornerRadius = 20
     }
     
-    private let favoriteButton = UIButton(type: .system).then {
-        $0.setTitle("Favorite", for: .normal)
-        $0.titleLabel?.font = .systemFont(ofSize: 18, weight: .semibold)
-        $0.setTitleColor(.white, for: .normal)
-        $0.backgroundColor = UIColor(white: 0.2, alpha: 1.0)
-        $0.layer.cornerRadius = 20
-    }
-    
     // Add a label to display when there are no outfits
     private let emptyOutfitMessageLabel = UILabel().then {
         $0.text = "옷장이 비어있어요!"
@@ -87,6 +79,18 @@ class TodayViewController: BaseViewController {
         $0.textAlignment = .center
         $0.isHidden = true // Initially hidden
     }
+    
+    // Add a style selection button
+    private let styleButton = UIButton(type: .system).then {
+        $0.setTitle("Select Style", for: .normal)
+        $0.titleLabel?.font = .systemFont(ofSize: 18, weight: .semibold)
+        $0.setTitleColor(.white, for: .normal)
+        $0.backgroundColor = UIColor(white: 0.2, alpha: 1.0)
+        $0.layer.cornerRadius = 20
+    }
+    
+    // Add styles array for selection
+    private let styles = ["캐주얼", "포멀", "스포티", "빈티지", "보헤미안", "시크", "프레피", "펑크"]
     
     // MARK: - Properties
     private let viewModel = TodayViewModel()
@@ -107,7 +111,7 @@ class TodayViewController: BaseViewController {
     override func setupViews() {
         super.setupViews()
         
-        [dateLabel, weatherIcon, weatherLabel, titleLabel, outfitView, buttonStackView].forEach {
+        [dateLabel, weatherIcon, weatherLabel, titleLabel, outfitView, buttonStackView, styleButton].forEach {
             view.addSubview($0)
         }
         
@@ -115,7 +119,7 @@ class TodayViewController: BaseViewController {
             outfitView.addSubview($0)
         }
         
-        [seeAnotherButton, favoriteButton].forEach {
+        [seeAnotherButton].forEach {
             buttonStackView.addArrangedSubview($0)
         }
         
@@ -184,15 +188,18 @@ class TodayViewController: BaseViewController {
             $0.center.equalToSuperview()
             $0.leading.trailing.equalToSuperview().inset(20)
         }
+        
+        // Update setupConstraints to set constraints for styleButton
+        styleButton.snp.makeConstraints {
+            $0.top.equalTo(outfitView.snp.bottom).offset(20)
+            $0.leading.trailing.equalToSuperview().inset(20)
+            $0.height.equalTo(44)
+        }
     }
     
     override func setupBindings() {
         seeAnotherButton.rx.tap
             .bind(to: viewModel.seeAnotherTapped)
-            .disposed(by: disposeBag)
-        
-        favoriteButton.rx.tap
-            .bind(to: viewModel.favoriteTapped)
             .disposed(by: disposeBag)
         
         viewModel.currentOutfit
@@ -206,6 +213,13 @@ class TodayViewController: BaseViewController {
             .map { !$0.isEmpty }
             .drive(emptyOutfitMessageLabel.rx.isHidden)
             .disposed(by: disposeBag)
+        
+        // Update setupBindings to handle styleButton tap
+        styleButton.rx.tap
+            .subscribe(onNext: { [weak self] in
+                self?.showStyleActionSheet()
+            })
+            .disposed(by: disposeBag)
     }
     
     // MARK: - Private Methods
@@ -215,6 +229,30 @@ class TodayViewController: BaseViewController {
     
     private func updateOutfit(_ outfit: Outfit?) {
         // Update outfit images
+    }
+    
+    // Add showStyleActionSheet method
+    private func showStyleActionSheet() {
+        let alert = UIAlertController(title: "Select Style", message: nil, preferredStyle: .actionSheet)
+        
+        styles.forEach { style in
+            let action = UIAlertAction(title: style, style: .default) { [weak self] _ in
+                self?.styleButton.setTitle(style, for: .normal)
+                self?.viewModel.updateSelectedStyle(Style(rawValue: style) ?? .casual)
+            }
+            alert.addAction(action)
+        }
+        
+        let cancelAction = UIAlertAction(title: "Cancel", style: .cancel)
+        alert.addAction(cancelAction)
+        
+        // iPad support
+        if let popoverController = alert.popoverPresentationController {
+            popoverController.sourceView = styleButton
+            popoverController.sourceRect = styleButton.bounds
+        }
+        
+        present(alert, animated: true)
     }
 } 
 

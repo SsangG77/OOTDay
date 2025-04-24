@@ -78,4 +78,9 @@ class ClosetViewModel {
     func isClosetEmpty() -> Bool {
         return itemsRelay.value.isEmpty
     }
+    
+    // Add a method to get clothes for a specific season
+    func getClothesForSeason(_ season: Season) -> [ClothingItem] {
+        return itemsRelay.value.filter { $0.seasons.contains(season.rawValue) }
+    }
 } 
