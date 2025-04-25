@@ -123,7 +123,7 @@ class TodayViewController: BaseViewController {
             buttonStackView.addArrangedSubview($0)
         }
         
-        // Set temporary images for testing
+//         Set temporary images for testing
         topImageView.image = UIImage(named: "jacket")
         bottomImageView.image = UIImage(named: "pants")
         shoesImageView.image = UIImage(named: "shoes")

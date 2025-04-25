@@ -19,16 +19,16 @@ class ClothingItem: Object {
     @Persisted(primaryKey: true) var id = UUID().uuidString
     @Persisted var category: String // Category의 rawValue
     @Persisted var imageUrl: String
-    @Persisted var color: String
+    @Persisted var colors = List<String>()
     @Persisted var style: String
     @Persisted var seasons: List<String> // Season의 rawValue
     @Persisted var createdAt = Date()
     
-    convenience init(category: Category, imageUrl: String, color: String, style: String, seasons: [Season]) {
+    convenience init(category: Category, imageUrl: String, colors: [String], style: String, seasons: [Season]) {
         self.init()
         self.category = category.rawValue
         self.imageUrl = imageUrl
-        self.color = color
+        self.colors.append(objectsIn: colors)
         self.style = style
         self.seasons.append(objectsIn: seasons.map { $0.rawValue })
     }

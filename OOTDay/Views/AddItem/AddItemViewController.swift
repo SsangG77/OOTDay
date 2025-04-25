@@ -438,7 +438,7 @@ class AddItemViewController: BaseViewController {
         viewModel.saveItem(
             image: image,
             category: categoryEnum,
-            color: colors,
+            colors: [colors],
             style: style,
             seasons: Array(seasonEnums)
         )

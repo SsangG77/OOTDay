@@ -16,7 +16,7 @@ class AddItemViewModel {
     func saveItem(
         image: UIImage,
         category: Category,
-        color: String,
+        colors: [String],
         style: String,
         seasons: [Season]
     ) -> Completable {
@@ -35,7 +35,7 @@ class AddItemViewModel {
                 let item = ClothingItem()
                 item.id = imageId
                 item.category = category.rawValue
-                item.color = color
+                item.colors.append(objectsIn: colors)
                 item.style = style
                 item.seasons.append(objectsIn: seasons.map { $0.rawValue })
                 
@@ -53,10 +53,10 @@ class AddItemViewModel {
     }
     
     // MARK: - Validation
-    func validateInput(image: UIImage?, category: Category?, color: String, style: String, seasons: [Season]) -> Bool {
+    func validateInput(image: UIImage?, category: Category?, colors: [String], style: String, seasons: [Season]) -> Bool {
         guard image != nil else { return false }
         guard category != nil else { return false }
-        guard !color.isEmpty else { return false }
+        guard !colors.isEmpty else { return false }
         guard !style.isEmpty else { return false }
         guard !seasons.isEmpty else { return false }
         
@@ -64,7 +64,9 @@ class AddItemViewModel {
     }
     
     // MARK: - Helpers
-    func parseColor(_ text: String) -> String {
-        return text.trimmingCharacters(in: .whitespaces)
+    func parseColors(_ text: String) -> [String] {
+        return text.split(separator: ",")
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
     }
 } 
