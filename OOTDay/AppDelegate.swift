@@ -6,14 +6,33 @@
 //
 
 import UIKit
+import RealmSwift
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
-
+    var window: UIWindow?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
+        
+        // Realm 마이그레이션 설정
+        let config = Realm.Configuration(
+            schemaVersion: 2, // 새로운 스키마 버전
+            migrationBlock: { migration, oldSchemaVersion in
+                if (oldSchemaVersion < 2) {
+                    // 마이그레이션 로직 추가
+                    migration.enumerateObjects(ofType: Outfit.className()) { oldObject, newObject in
+                        // outer 속성을 추가
+                        newObject!["outer"] = nil
+                    }
+                }
+            }
+        )
+        
+        // Realm의 기본 설정으로 설정
+        Realm.Configuration.defaultConfiguration = config
+        
         return true
     }
 

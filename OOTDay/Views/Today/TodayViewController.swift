@@ -30,9 +30,9 @@ class TodayViewController: BaseViewController {
         $0.textColor = .black
     }
     
-    private let outfitView = UIView().then {
-        $0.backgroundColor = .clear
-    }
+     private let outfitView = UIView().then {
+         $0.backgroundColor = .clear
+     }
     
     private let topImageView = UIImageView().then {
         $0.contentMode = .scaleAspectFit
@@ -92,6 +92,26 @@ class TodayViewController: BaseViewController {
     // Add styles array for selection
     private let styles = ["캐주얼", "포멀", "스포티", "빈티지", "보헤미안", "시크", "프레피", "펑크"]
     
+    // Add outerImageView to display outer clothing
+    private let outerImageView = UIImageView().then {
+        $0.contentMode = .scaleAspectFit
+        $0.backgroundColor = .clear
+        $0.layer.cornerRadius = 8
+        $0.clipsToBounds = true
+        $0.isHidden = true // Initially hidden
+    }
+    
+    // Add scrollView to allow scrolling
+    private let scrollView = UIScrollView().then {
+        $0.showsVerticalScrollIndicator = false
+        $0.showsHorizontalScrollIndicator = false
+    }
+    
+    // Add contentView inside scrollView
+    private let contentView = UIView().then {
+        $0.backgroundColor = .clear
+    }
+    
     // MARK: - Properties
     private let viewModel = TodayViewModel()
     
@@ -111,15 +131,15 @@ class TodayViewController: BaseViewController {
     override func setupViews() {
         super.setupViews()
         
-        [dateLabel, weatherIcon, weatherLabel, titleLabel, outfitView, buttonStackView, styleButton].forEach {
+        [dateLabel, weatherIcon, weatherLabel, titleLabel, outfitView, buttonStackView, scrollView].forEach {
             view.addSubview($0)
         }
         
-        [topImageView, bottomImageView, shoesImageView].forEach {
+        [topImageView, outerImageView, bottomImageView, shoesImageView].forEach {
             outfitView.addSubview($0)
         }
         
-        [seeAnotherButton].forEach {
+        [seeAnotherButton, styleButton].forEach {
             buttonStackView.addArrangedSubview($0)
         }
         
@@ -130,6 +150,16 @@ class TodayViewController: BaseViewController {
         
         // In setupViews, add the emptyOutfitMessageLabel to the view
         view.addSubview(emptyOutfitMessageLabel)
+        
+        // Update setupViews to add scrollView and contentView
+        view.addSubview(scrollView)
+        scrollView.addSubview(contentView)
+        
+        // Move outfitView to contentView
+        contentView.addSubview(outfitView)
+        
+        // Temporarily set the background color of contentView to red
+        contentView.backgroundColor = .red
     }
     
     override func setupConstraints() {
@@ -154,10 +184,10 @@ class TodayViewController: BaseViewController {
             $0.leading.equalToSuperview().offset(20)
         }
         
-        outfitView.snp.makeConstraints {
+        scrollView.snp.remakeConstraints {
             $0.top.equalTo(titleLabel.snp.bottom).offset(20)
             $0.leading.trailing.equalToSuperview().inset(20)
-            $0.height.equalTo(400)
+            $0.bottom.equalTo(buttonStackView.snp.top).offset(-20)
         }
         
         topImageView.snp.makeConstraints {
@@ -165,13 +195,19 @@ class TodayViewController: BaseViewController {
             $0.height.equalTo(160)
         }
         
-        bottomImageView.snp.makeConstraints {
+        outerImageView.snp.makeConstraints {
             $0.top.equalTo(topImageView.snp.bottom).offset(20)
             $0.leading.trailing.equalToSuperview()
             $0.height.equalTo(160)
         }
         
-        shoesImageView.snp.makeConstraints {
+        bottomImageView.snp.remakeConstraints {
+            $0.top.equalTo(outerImageView.snp.bottom).offset(20)
+            $0.leading.trailing.equalToSuperview()
+            $0.height.equalTo(160)
+        }
+        
+        shoesImageView.snp.remakeConstraints {
             $0.top.equalTo(bottomImageView.snp.bottom).offset(20)
             $0.leading.trailing.equalToSuperview()
             $0.height.equalTo(60)
@@ -189,11 +225,17 @@ class TodayViewController: BaseViewController {
             $0.leading.trailing.equalToSuperview().inset(20)
         }
         
-        // Update setupConstraints to set constraints for styleButton
-        styleButton.snp.makeConstraints {
-            $0.top.equalTo(outfitView.snp.bottom).offset(20)
+        // Update setupConstraints for scrollView and contentView
+        scrollView.snp.remakeConstraints {
+            $0.top.equalTo(titleLabel.snp.bottom).offset(20)
             $0.leading.trailing.equalToSuperview().inset(20)
-            $0.height.equalTo(44)
+            $0.bottom.equalTo(buttonStackView.snp.top).offset(-20)
+        }
+        
+        contentView.snp.remakeConstraints {
+            $0.edges.equalToSuperview()
+            $0.width.equalToSuperview() // Match width to enable vertical scrolling
+            $0.height.greaterThanOrEqualTo(outfitView.snp.height).offset(40) // Ensure contentView is taller than scrollView
         }
     }
     
@@ -228,7 +270,28 @@ class TodayViewController: BaseViewController {
     }
     
     private func updateOutfit(_ outfit: Outfit?) {
-        // Update outfit images
+        print("updateOutfit called with outfit: \(outfit)")
+        guard let outfit = outfit else {
+            // Handle case where outfit is nil
+            topImageView.image = nil
+            bottomImageView.image = nil
+            shoesImageView.image = nil
+            outerImageView.isHidden = true
+            return
+        }
+        
+        // Update images for top, bottom, and shoes
+        topImageView.image = ImageStorageService.shared.loadImage(withName: outfit.top?.id ?? "")
+        bottomImageView.image = ImageStorageService.shared.loadImage(withName: outfit.bottom?.id ?? "")
+        shoesImageView.image = ImageStorageService.shared.loadImage(withName: outfit.shoes?.id ?? "")
+        
+        // Update image for outer if available
+        if let outer = outfit.outer {
+            outerImageView.image = ImageStorageService.shared.loadImage(withName: outer.id)
+            outerImageView.isHidden = false
+        } else {
+            outerImageView.isHidden = true
+        }
     }
     
     // Add showStyleActionSheet method

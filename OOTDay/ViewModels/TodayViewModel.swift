@@ -77,12 +77,15 @@ class TodayViewModel {
             let bottom = filteredClothes.min { colorDistance(UIColor(hex: $0.colors.first ?? ""), coolColors[0]) < colorDistance(UIColor(hex: $1.colors.first ?? ""), coolColors[0]) }
             let shoes = filteredClothes.min { colorDistance(UIColor(hex: $0.colors.first ?? ""), warmColors[0]) < colorDistance(UIColor(hex: $1.colors.first ?? ""), warmColors[0]) }
             
+            // Add outer selection logic
+            let outer = filteredClothes.filter { $0.category == "outer" }.min { colorDistance(UIColor(hex: $0.colors.first ?? ""), neutralColors[0]) < colorDistance(UIColor(hex: $1.colors.first ?? ""), neutralColors[0]) }
+            
             // Example temperature and weather
             let temperature = 20.0 // Example temperature
             let weather = "Sunny" // Example weather
             
             if let top = top, let bottom = bottom, let shoes = shoes {
-                let outfit = Outfit(top: top, bottom: bottom, shoes: shoes, temperature: temperature, weather: weather)
+                let outfit = Outfit(top: top, bottom: bottom, shoes: shoes, outer: outer, temperature: temperature, weather: weather)
                 outfitRelay.accept(outfit)
             } else {
                 print("적절한 코디를 생성할 수 없습니다.")
