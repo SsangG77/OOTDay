@@ -31,7 +31,8 @@ class TodayViewController: BaseViewController {
     }
     
      private let outfitView = UIView().then {
-         $0.backgroundColor = .clear
+         $0.backgroundColor = .red
+         $0.heightAnchor.constraint(equalToConstant: 1000).isActive = true // Restore fixed height
      }
     
     private let topImageView = UIImageView().then {
@@ -99,18 +100,20 @@ class TodayViewController: BaseViewController {
         $0.layer.cornerRadius = 8
         $0.clipsToBounds = true
         $0.isHidden = true // Initially hidden
+        
     }
     
     // Add scrollView to allow scrolling
     private let scrollView = UIScrollView().then {
-        $0.showsVerticalScrollIndicator = false
+        $0.showsVerticalScrollIndicator = true
         $0.showsHorizontalScrollIndicator = false
+        $0.alwaysBounceHorizontal = false // Disable horizontal scrolling
     }
     
     // Add contentView inside scrollView
-    private let contentView = UIView().then {
-        $0.backgroundColor = .clear
-    }
+    // private let contentView = UIView().then {
+    //     $0.backgroundColor = .clear
+    // }
     
     // MARK: - Properties
     private let viewModel = TodayViewModel()
@@ -131,11 +134,13 @@ class TodayViewController: BaseViewController {
     override func setupViews() {
         super.setupViews()
         
-        [dateLabel, weatherIcon, weatherLabel, titleLabel, outfitView, buttonStackView, scrollView].forEach {
+        [dateLabel, weatherIcon, weatherLabel, titleLabel, /*outfitView,*/ buttonStackView, scrollView].forEach {
             view.addSubview($0)
         }
+
+        scrollView.addSubview(outfitView)
         
-        [topImageView, outerImageView, bottomImageView, shoesImageView].forEach {
+        [outerImageView, topImageView, bottomImageView, shoesImageView].forEach {
             outfitView.addSubview($0)
         }
         
@@ -144,22 +149,22 @@ class TodayViewController: BaseViewController {
         }
         
 //         Set temporary images for testing
-        topImageView.image = UIImage(named: "jacket")
-        bottomImageView.image = UIImage(named: "pants")
-        shoesImageView.image = UIImage(named: "shoes")
+        // topImageView.image = UIImage(named: "jacket")
+        // bottomImageView.image = UIImage(named: "pants")
+        // shoesImageView.image = UIImage(named: "shoes")
         
         // In setupViews, add the emptyOutfitMessageLabel to the view
         view.addSubview(emptyOutfitMessageLabel)
         
         // Update setupViews to add scrollView and contentView
         view.addSubview(scrollView)
-        scrollView.addSubview(contentView)
+        scrollView.addSubview(outfitView)
         
         // Move outfitView to contentView
-        contentView.addSubview(outfitView)
+        // contentView.addSubview(outfitView)
         
         // Temporarily set the background color of contentView to red
-        contentView.backgroundColor = .red
+        // contentView.backgroundColor = .red
     }
     
     override func setupConstraints() {
@@ -188,6 +193,11 @@ class TodayViewController: BaseViewController {
             $0.top.equalTo(titleLabel.snp.bottom).offset(20)
             $0.leading.trailing.equalToSuperview().inset(20)
             $0.bottom.equalTo(buttonStackView.snp.top).offset(-20)
+        }
+        
+        outfitView.snp.remakeConstraints {
+            $0.edges.equalToSuperview()
+            $0.width.equalToSuperview() // Match width to enable vertical scrolling
         }
         
         topImageView.snp.makeConstraints {
@@ -232,10 +242,9 @@ class TodayViewController: BaseViewController {
             $0.bottom.equalTo(buttonStackView.snp.top).offset(-20)
         }
         
-        contentView.snp.remakeConstraints {
+        outfitView.snp.remakeConstraints {
             $0.edges.equalToSuperview()
             $0.width.equalToSuperview() // Match width to enable vertical scrolling
-            $0.height.greaterThanOrEqualTo(outfitView.snp.height).offset(40) // Ensure contentView is taller than scrollView
         }
     }
     
@@ -290,7 +299,8 @@ class TodayViewController: BaseViewController {
             outerImageView.image = ImageStorageService.shared.loadImage(withName: outer.id)
             outerImageView.isHidden = false
         } else {
-            outerImageView.isHidden = true
+            outerImageView.removeFromSuperview()
+//            outerImageView.isHidden = true
         }
     }
     
