@@ -13,7 +13,7 @@ class ClosetViewModel {
     // MARK: - Private
     private let disposeBag = DisposeBag()
     private let realm = try! Realm()
-    private let itemsRelay = BehaviorRelay<[ClothingItem]>(value: [])
+    let itemsRelay = BehaviorRelay<[ClothingItem]>(value: [])
     private var notificationToken: NotificationToken?
     
     // Add a relay to notify when items are deleted

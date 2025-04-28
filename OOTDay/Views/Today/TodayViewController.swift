@@ -220,7 +220,7 @@ class TodayViewController: BaseViewController {
         shoesImageView.snp.remakeConstraints {
             $0.top.equalTo(bottomImageView.snp.bottom).offset(20)
             $0.leading.trailing.equalToSuperview()
-            $0.height.equalTo(60)
+            $0.height.equalTo(160)
         }
         
         buttonStackView.snp.makeConstraints {

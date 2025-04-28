@@ -3,6 +3,7 @@ import RxSwift
 import RxCocoa
 import SnapKit
 import PhotosUI
+import RealmSwift
 
 class AddItemViewController: BaseViewController {
     
@@ -160,12 +161,21 @@ class AddItemViewController: BaseViewController {
     // Update styles array to use Korean names
     private let styles = ["캐주얼", "포멀", "스포티", "빈티지", "보헤미안", "시크", "프레피", "펑크"]
     
+    // Add a property to hold the ClothingItem being edited
+    var clothingItem: ClothingItem?
+    
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = UIColor(red: 250/255, green: 245/255, blue: 237/255, alpha: 1)
         navigationController?.setNavigationBarHidden(true, animated: false)
         categoryButton.setTitle("Select", for: .normal)
+        
+        if let item = clothingItem {
+            // Initialize fields with the item's properties
+            // Example: categoryButton.setTitle(item.category, for: .normal)
+            // Initialize other fields like colors, style, and seasons
+        }
         
         // Add tap gesture to dismiss keyboard
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
@@ -315,7 +325,7 @@ class AddItemViewController: BaseViewController {
         // Save button
         saveButton.rx.tap
             .subscribe(onNext: { [weak self] in
-                self?.saveItem()
+                self?.saveChanges()
             })
             .disposed(by: disposeBag)
         
@@ -380,86 +390,23 @@ class AddItemViewController: BaseViewController {
         present(alert, animated: true)
     }
     
-    private func saveItem() {
-        // Validate inputs
-        guard let image = photoImageView.image else {
-            showAlert(message: "Please select a photo")
-            return
-        }
+    private func saveChanges() {
+        guard let item = clothingItem else { return }
         
-        guard let category = selectedCategory else {
-            showAlert(message: "Please select a category")
-            return
-        }
+        // Update item properties with user changes
+        // Example: item.category = selectedCategory
+        // Update other properties like colors, style, and seasons
         
-        guard let colors = colorPickerButton.backgroundColor?.toHexString(), !colors.isEmpty else {
-            showAlert(message: "Please select a color")
-            return
-        }
-        
-        guard let style = styleButton.titleLabel?.text, !style.isEmpty else {
-            showAlert(message: "Please select a style")
-            return
-        }
-        
-        guard !selectedSeasons.isEmpty else {
-            showAlert(message: "Please select at least one season")
-            return
-        }
-        
-        // Convert category string to Category enum
-        let categoryEnum: Category
-        switch category.lowercased() {
-        case "outer":
-            categoryEnum = .outer
-        case "top":
-            categoryEnum = .top
-        case "bottom":
-            categoryEnum = .bottom
-        case "shoes":
-            categoryEnum = .shoes
-        default:
-            showAlert(message: "Invalid category")
-            return
-        }
-        
-        // Convert season strings to Season enum array
-        let seasonEnums = selectedSeasons.compactMap { seasonStr -> Season? in
-            switch seasonStr.lowercased() {
-            case "spring": return .spring
-            case "summer": return .summer
-            case "fall": return .fall
-            case "winter": return .winter
-            default: return nil
+        // Save changes to Realm
+        do {
+            let realm = try Realm()
+            try realm.write {
+                realm.add(item, update: .modified)
             }
+            navigationController?.popViewController(animated: true)
+        } catch {
+            print("Error saving changes: \(error)")
         }
-        
-        // Save item using view model
-        viewModel.saveItem(
-            image: image,
-            category: categoryEnum,
-            colors: [colors],
-            style: style,
-            seasons: Array(seasonEnums)
-        )
-        .subscribe(
-            onCompleted: { [weak self] in
-                self?.showAlert(message: "Item saved successfully") { _ in
-                    self?.dismiss(animated: true)
-                }
-            },
-            onError: { [weak self] error in
-                self?.showAlert(message: "Failed to save item: \(error.localizedDescription)")
-            }
-        )
-        .disposed(by: disposeBag)
-    }
-    
-    private func showAlert(message: String, completion: ((UIAlertAction) -> Void)? = nil) {
-        let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
-        let okAction = UIAlertAction(title: "OK", style: .default, handler: completion)
-        alert.addAction(okAction)
-        present(alert, animated: true)
     }
     
     @objc private func dismissKeyboard() {

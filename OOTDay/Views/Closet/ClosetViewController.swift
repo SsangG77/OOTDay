@@ -149,6 +149,17 @@ class ClosetViewController: BaseViewController {
                 cell.configure(with: item)
             }
             .disposed(by: disposeBag)
+        
+        // Modify collectionView didSelectItemAt to present the edit view controller
+        collectionView.rx.itemSelected
+            .subscribe(onNext: { [weak self] indexPath in
+                guard let self = self else { return }
+//                let item = self.viewModel.items.value[indexPath.row]
+                let item = self.viewModel.itemsRelay.value[indexPath.row]
+
+                self.presentEditItemViewController(with: item)
+            })
+            .disposed(by: disposeBag)
     }
     
     // MARK: - Private Methods
@@ -209,6 +220,13 @@ class ClosetViewController: BaseViewController {
     // Add a method to delete the item from the view model
     private func deleteItem(at indexPath: IndexPath) {
         viewModel.deleteItem(at: indexPath.row)
+    }
+    
+    // Add a method to present AddItemViewController for editing
+    private func presentEditItemViewController(with item: ClothingItem) {
+        let addItemVC = AddItemViewController()
+        addItemVC.clothingItem = item
+        navigationController?.pushViewController(addItemVC, animated: true)
     }
 }
 
