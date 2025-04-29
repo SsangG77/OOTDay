@@ -6,6 +6,10 @@ import Then
 
 class TodayViewController: BaseViewController {
     
+    let boxSize = 260
+    let spacing = 25
+//    let totalHeight: CGFloat = (160 * 4) + (20 * 3)
+
     // MARK: - UI Components
     private let dateLabel = UILabel().then {
         $0.font = .systemFont(ofSize: 24, weight: .bold)
@@ -31,28 +35,28 @@ class TodayViewController: BaseViewController {
     }
     
      private let outfitView = UIView().then {
-         $0.backgroundColor = .red
-         $0.heightAnchor.constraint(equalToConstant: 1000).isActive = true // Restore fixed height
+        //  $0.backgroundColor = .red
+         $0.heightAnchor.constraint(equalToConstant: CGFloat((260 * 4) + (25 * 3))).isActive = true // Restore fixed height
      }
     
     private let topImageView = UIImageView().then {
         $0.contentMode = .scaleAspectFit
         $0.backgroundColor = .clear
-        $0.layer.cornerRadius = 8
+        // $0.layer.cornerRadius = 8
         $0.clipsToBounds = true
     }
     
     private let bottomImageView = UIImageView().then {
         $0.contentMode = .scaleAspectFit
         $0.backgroundColor = .clear
-        $0.layer.cornerRadius = 8
+        // $0.layer.cornerRadius = 8
         $0.clipsToBounds = true
     }
     
     private let shoesImageView = UIImageView().then {
         $0.contentMode = .scaleAspectFit
         $0.backgroundColor = .clear
-        $0.layer.cornerRadius = 8
+        // $0.layer.cornerRadius = 8
         $0.clipsToBounds = true
     }
     
@@ -97,7 +101,7 @@ class TodayViewController: BaseViewController {
     private let outerImageView = UIImageView().then {
         $0.contentMode = .scaleAspectFit
         $0.backgroundColor = .clear
-        $0.layer.cornerRadius = 8
+        // $0.layer.cornerRadius = 8
         $0.clipsToBounds = true
         $0.isHidden = true // Initially hidden
         
@@ -134,7 +138,7 @@ class TodayViewController: BaseViewController {
     override func setupViews() {
         super.setupViews()
         
-        [dateLabel, weatherIcon, weatherLabel, titleLabel, /*outfitView,*/ buttonStackView, scrollView].forEach {
+        [dateLabel, weatherIcon, weatherLabel, titleLabel, buttonStackView, scrollView].forEach {
             view.addSubview($0)
         }
 
@@ -202,25 +206,25 @@ class TodayViewController: BaseViewController {
         
         topImageView.snp.makeConstraints {
             $0.top.leading.trailing.equalToSuperview()
-            $0.height.equalTo(160)
+            $0.height.equalTo(boxSize)
         }
         
         outerImageView.snp.makeConstraints {
-            $0.top.equalTo(topImageView.snp.bottom).offset(20)
+            $0.top.equalTo(topImageView.snp.bottom).offset(spacing)
             $0.leading.trailing.equalToSuperview()
-            $0.height.equalTo(160)
+            $0.height.equalTo(boxSize)
         }
         
         bottomImageView.snp.remakeConstraints {
-            $0.top.equalTo(outerImageView.snp.bottom).offset(20)
+            $0.top.equalTo(outerImageView.snp.bottom).offset(spacing)
             $0.leading.trailing.equalToSuperview()
-            $0.height.equalTo(160)
+            $0.height.equalTo(boxSize)
         }
         
         shoesImageView.snp.remakeConstraints {
-            $0.top.equalTo(bottomImageView.snp.bottom).offset(20)
+            $0.top.equalTo(bottomImageView.snp.bottom).offset(spacing)
             $0.leading.trailing.equalToSuperview()
-            $0.height.equalTo(160)
+            $0.height.equalTo(boxSize)
         }
         
         buttonStackView.snp.makeConstraints {
@@ -291,8 +295,11 @@ class TodayViewController: BaseViewController {
         
         // Update images for top, bottom, and shoes
         topImageView.image = ImageStorageService.shared.loadImage(withName: outfit.top?.id ?? "")
+        topImageView.layer.cornerRadius = 18
         bottomImageView.image = ImageStorageService.shared.loadImage(withName: outfit.bottom?.id ?? "")
+        bottomImageView.layer.cornerRadius = 18
         shoesImageView.image = ImageStorageService.shared.loadImage(withName: outfit.shoes?.id ?? "")
+        shoesImageView.layer.cornerRadius = 18
         
         // Update image for outer if available
         if let outer = outfit.outer {

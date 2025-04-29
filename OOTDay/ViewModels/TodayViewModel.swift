@@ -63,35 +63,23 @@ class TodayViewModel {
             let shoes = availableClothes.filter { $0.category == Category.shoes.rawValue }
             let outers = availableClothes.filter { $0.category == Category.outer.rawValue }
             
-            // Define color palettes
-            let neutralColors = [UIColor.white, UIColor.black, UIColor.gray]
-            let warmColors = [UIColor.red, UIColor.orange, UIColor.yellow]
-            let coolColors = [UIColor.blue, UIColor.green, UIColor.purple]
-            
-            // Function to calculate color distance
-            func colorDistance(_ color1: UIColor, _ color2: UIColor) -> CGFloat {
-                var r1: CGFloat = 0, g1: CGFloat = 0, b1: CGFloat = 0, a1: CGFloat = 0
-                var r2: CGFloat = 0, g2: CGFloat = 0, b2: CGFloat = 0, a2: CGFloat = 0
-                color1.getRed(&r1, green: &g1, blue: &b1, alpha: &a1)
-                color2.getRed(&r2, green: &g2, blue: &b2, alpha: &a2)
-                return sqrt(pow(r2 - r1, 2) + pow(g2 - g1, 2) + pow(b2 - b1, 2))
+            // Generate multiple outfits by creating combinations
+            var outfits: [Outfit] = []
+            for top in tops.prefix(3) { // Select top 3 tops
+                for bottom in bottoms.prefix(3) { // Select top 3 bottoms
+                    for shoe in shoes.prefix(3) { // Select top 3 shoes
+                        let outer = outers.first // Select the first outer if available
+                        let temperature = 20.0 // Example temperature
+                        let weather = "Sunny" // Example weather
+                        let outfit = Outfit(top: top, bottom: bottom, shoes: shoe, outer: outer, temperature: temperature, weather: weather)
+                        outfits.append(outfit)
+                    }
+                }
             }
             
-            // Update color selection logic to use colors array
-            let top = tops.min { colorDistance(UIColor(hex: $0.colors.first ?? ""), neutralColors[0]) < colorDistance(UIColor(hex: $1.colors.first ?? ""), neutralColors[0]) }
-            let bottom = bottoms.min { colorDistance(UIColor(hex: $0.colors.first ?? ""), coolColors[0]) < colorDistance(UIColor(hex: $1.colors.first ?? ""), coolColors[0]) }
-            let shoe = shoes.min { colorDistance(UIColor(hex: $0.colors.first ?? ""), warmColors[0]) < colorDistance(UIColor(hex: $1.colors.first ?? ""), warmColors[0]) }
-            
-            // Add outer selection logic
-            let outer = outers.min { colorDistance(UIColor(hex: $0.colors.first ?? ""), neutralColors[0]) < colorDistance(UIColor(hex: $1.colors.first ?? ""), neutralColors[0]) }
-            
-            // Example temperature and weather
-            let temperature = 20.0 // Example temperature
-            let weather = "Sunny" // Example weather
-            
-            if let top = top, let bottom = bottom, let shoe = shoe {
-                let outfit = Outfit(top: top, bottom: bottom, shoes: shoe, outer: outer, temperature: temperature, weather: weather)
-                outfitRelay.accept(outfit)
+            // Randomly select one outfit from the generated outfits
+            if let randomOutfit = outfits.randomElement() {
+                outfitRelay.accept(randomOutfit)
             } else {
                 print("적절한 코디를 생성할 수 없습니다.")
                 outfitRelay.accept(nil)
