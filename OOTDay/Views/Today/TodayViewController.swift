@@ -3,6 +3,8 @@ import RxSwift
 import RxCocoa
 import SnapKit
 import Then
+import WeatherKit
+import CoreLocation
 
 class TodayViewController: BaseViewController {
     
@@ -279,7 +281,7 @@ class TodayViewController: BaseViewController {
     
     // MARK: - Private Methods
     private func updateWeatherInfo() {
-        weatherLabel.text = "22°"
+        weatherLabel.text = "0°"
     }
     
     private func updateOutfit(_ outfit: Outfit?) {
@@ -339,4 +341,44 @@ class TodayViewController: BaseViewController {
 
 #Preview {
     TodayViewController()
+}
+
+class WeatherManager: NSObject, CLLocationManagerDelegate {
+    private let weatherService = WeatherService()
+    private let locationManager = CLLocationManager()
+    private var currentLocation: CLLocation?
+
+    override init() {
+        super.init()
+        locationManager.delegate = self
+        locationManager.requestWhenInUseAuthorization()
+        locationManager.startUpdatingLocation()
+    }
+
+    func fetchWeather(completion: @escaping (Weather?) -> Void) {
+        guard let location = currentLocation else {
+            completion(nil)
+            return
+        }
+
+        Task {
+            do {
+                let weather = try await weatherService.weather(for: location)
+                completion(weather)
+            } catch {
+                print("Error fetching weather: \(error)")
+                completion(nil)
+            }
+        }
+    }
+
+    // CLLocationManagerDelegate
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        currentLocation = locations.last
+        locationManager.stopUpdatingLocation()
+    }
+
+    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+        print("Failed to find user's location: \(error.localizedDescription)")
+    }
 }
