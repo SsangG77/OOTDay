@@ -123,6 +123,7 @@ class TodayViewController: BaseViewController {
     
     // MARK: - Properties
     private let viewModel = TodayViewModel()
+    private let weatherManager = WeatherManager()
     
     // MARK: - Lifecycle
     override func viewDidLoad() {
@@ -281,11 +282,17 @@ class TodayViewController: BaseViewController {
     
     // MARK: - Private Methods
     private func updateWeatherInfo() {
-        weatherLabel.text = "0°"
+        weatherManager.fetchWeather { [weak self] weather in
+            guard let self = self, let weather = weather else { return }
+            DispatchQueue.main.async {
+                print("weather temp : \(weather.currentWeather.temperature.value)")
+                self.weatherLabel.text = "\(weather.currentWeather.temperature.value)°"
+            }
+        }
     }
     
     private func updateOutfit(_ outfit: Outfit?) {
-        print("updateOutfit called with outfit: \(outfit)")
+        // print("updateOutfit called with outfit: \(outfit)")
         guard let outfit = outfit else {
             // Handle case where outfit is nil
             topImageView.image = nil
