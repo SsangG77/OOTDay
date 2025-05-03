@@ -57,11 +57,11 @@ class TodayViewModel {
             let currentSeason = getCurrentSeason()
             let availableClothes = closetViewModel.getClothesForSeason(currentSeason)
             
-            // Filter clothes by category
-            let tops = availableClothes.filter { $0.category == Category.top.rawValue }
-            let bottoms = availableClothes.filter { $0.category == Category.bottom.rawValue }
-            let shoes = availableClothes.filter { $0.category == Category.shoes.rawValue }
-            let outers = availableClothes.filter { $0.category == Category.outer.rawValue }
+            // Filter clothes by category and selected style
+            let tops = availableClothes.filter { $0.category == Category.top.rawValue && $0.style == selectedStyle.rawValue }
+            let bottoms = availableClothes.filter { $0.category == Category.bottom.rawValue && $0.style == selectedStyle.rawValue }
+            let shoes = availableClothes.filter { $0.category == Category.shoes.rawValue && $0.style == selectedStyle.rawValue }
+            let outers = availableClothes.filter { $0.category == Category.outer.rawValue && $0.style == selectedStyle.rawValue }
             
             // Generate multiple outfits by creating combinations
             var outfits: [Outfit] = []
