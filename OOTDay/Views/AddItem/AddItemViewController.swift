@@ -389,7 +389,7 @@ class AddItemViewController: BaseViewController {
         
         present(alert, animated: true)
     }
-    
+
     private func saveChanges() {
         guard let item = clothingItem else { return }
         

@@ -17,7 +17,7 @@ class AddItemViewModel {
         image: UIImage,
         category: Category,
         colors: [String],
-        style: String,
+        style: Style,
         seasons: [Season]
     ) -> Completable {
         return Completable.create { [weak self] completable in
@@ -36,7 +36,7 @@ class AddItemViewModel {
                 item.id = imageId
                 item.category = category.rawValue
                 item.colors.append(objectsIn: colors)
-                item.style = style
+                item.styleEnum = style
                 item.seasons.append(objectsIn: seasons.map { $0.rawValue })
                 
                 try self.realm.write {
@@ -53,11 +53,11 @@ class AddItemViewModel {
     }
     
     // MARK: - Validation
-    func validateInput(image: UIImage?, category: Category?, colors: [String], style: String, seasons: [Season]) -> Bool {
+    func validateInput(image: UIImage?, category: Category?, colors: [String], style: Style?, seasons: [Season]) -> Bool {
         guard image != nil else { return false }
         guard category != nil else { return false }
         guard !colors.isEmpty else { return false }
-        guard !style.isEmpty else { return false }
+        guard style != nil else { return false }
         guard !seasons.isEmpty else { return false }
         
         return true

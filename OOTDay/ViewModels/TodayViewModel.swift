@@ -53,26 +53,94 @@ class TodayViewModel {
             print("옷장이 비어 있습니다.")
             outfitRelay.accept(nil)
         } else {
-            // Example: Implement outfit generation logic
             let currentSeason = getCurrentSeason()
             let availableClothes = closetViewModel.getClothesForSeason(currentSeason)
+            print("Available clothes for season: \(currentSeason): \(availableClothes.count)")
             
+            // Debug: Print each item's style
+            for item in availableClothes {
+                print("Item ID: \(item.id), Style: \(item.style)")
+            }
+            
+            // Define color palettes
+            let neutralColors = [UIColor.white, UIColor.black, UIColor.gray]
+            let warmColors = [UIColor.red, UIColor.orange, UIColor.yellow]
+            let coolColors = [UIColor.blue, UIColor.green, UIColor.purple]
+            let pastelColors = [UIColor.systemPink, UIColor.systemTeal, UIColor.systemYellow]
+            
+            // Function to calculate color distance
+            func colorDistance(_ color1: UIColor, _ color2: UIColor) -> CGFloat {
+                var r1: CGFloat = 0, g1: CGFloat = 0, b1: CGFloat = 0, a1: CGFloat = 0
+                var r2: CGFloat = 0, g2: CGFloat = 0, b2: CGFloat = 0, a2: CGFloat = 0
+                color1.getRed(&r1, green: &g1, blue: &b1, alpha: &a1)
+                color2.getRed(&r2, green: &g2, blue: &b2, alpha: &a2)
+                return sqrt(pow(r2 - r1, 2) + pow(g2 - g1, 2) + pow(b2 - b1, 2))
+            }
+            
+            // Function to convert hex string to UIColor
+            func colorFromHex(_ hex: String) -> UIColor {
+                var hexSanitized = hex.trimmingCharacters(in: .whitespacesAndNewlines)
+                hexSanitized = hexSanitized.replacingOccurrences(of: "#", with: "")
+
+                var rgb: UInt64 = 0
+                Scanner(string: hexSanitized).scanHexInt64(&rgb)
+
+                let red = CGFloat((rgb & 0xFF0000) >> 16) / 255.0
+                let green = CGFloat((rgb & 0x00FF00) >> 8) / 255.0
+                let blue = CGFloat(rgb & 0x0000FF) / 255.0
+
+                return UIColor(red: red, green: green, blue: blue, alpha: 1.0)
+            }
+
             // Filter clothes by category and selected style
-            let tops = availableClothes.filter { $0.category == Category.top.rawValue && $0.style == selectedStyle.rawValue }
-            let bottoms = availableClothes.filter { $0.category == Category.bottom.rawValue && $0.style == selectedStyle.rawValue }
-            let shoes = availableClothes.filter { $0.category == Category.shoes.rawValue && $0.style == selectedStyle.rawValue }
-            let outers = availableClothes.filter { $0.category == Category.outer.rawValue && $0.style == selectedStyle.rawValue }
+            let tops = availableClothes.filter { $0.category == Category.top.rawValue && $0.styleEnum == selectedStyle }
+            let bottoms = availableClothes.filter { $0.category == Category.bottom.rawValue && $0.styleEnum == selectedStyle }
+            let shoes = availableClothes.filter { $0.category == Category.shoes.rawValue && $0.styleEnum == selectedStyle }
+            let outers = availableClothes.filter { $0.category == Category.outer.rawValue && $0.styleEnum == selectedStyle }
             
-            // Generate multiple outfits by creating combinations
+            print("Filtered tops: \(tops.count), bottoms: \(bottoms.count), shoes: \(shoes.count), outers: \(outers.count)")
+            
+            // Generate outfits based on color combinations
             var outfits: [Outfit] = []
-            for top in tops.prefix(3) { // Select top 3 tops
-                for bottom in bottoms.prefix(3) { // Select top 3 bottoms
-                    for shoe in shoes.prefix(3) { // Select top 3 shoes
-                        let outer = outers.first // Select the first outer if available
-                        let temperature = 20.0 // Example temperature
-                        let weather = "Sunny" // Example weather
-                        let outfit = Outfit(top: top, bottom: bottom, shoes: shoe, outer: outer, temperature: temperature, weather: weather)
-                        outfits.append(outfit)
+            for top in tops {
+                for bottom in bottoms {
+                    for shoe in shoes {
+                        let outer = outers.first
+                        
+                        // Convert first color from hex to UIColor
+                        let topColor = top.colors.first.map { colorFromHex($0) } ?? UIColor.clear
+                        let bottomColor = bottom.colors.first.map { colorFromHex($0) } ?? UIColor.clear
+                        let shoeColor = shoe.colors.first.map { colorFromHex($0) } ?? UIColor.clear
+
+                        // Example: Neutral + Point Color
+                        if neutralColors.contains(topColor) || neutralColors.contains(bottomColor) {
+                            outfits.append(Outfit(top: top, bottom: bottom, shoes: shoe, outer: outer, temperature: 20.0, weather: "Sunny"))
+                            print("Added outfit with neutral + point color")
+                        }
+                        
+                        // Example: Analogous Colors
+                        if colorDistance(topColor, bottomColor) < 0.2 {
+                            outfits.append(Outfit(top: top, bottom: bottom, shoes: shoe, outer: outer, temperature: 20.0, weather: "Sunny"))
+                            print("Added outfit with analogous colors")
+                        }
+                        
+                        // Example: Complementary Colors
+                        if colorDistance(topColor, shoeColor) > 0.5 {
+                            outfits.append(Outfit(top: top, bottom: bottom, shoes: shoe, outer: outer, temperature: 20.0, weather: "Sunny"))
+                            print("Added outfit with complementary colors")
+                        }
+                        
+                        // Example: Tone-on-Tone
+                        if colorDistance(topColor, bottomColor) < 0.1 {
+                            outfits.append(Outfit(top: top, bottom: bottom, shoes: shoe, outer: outer, temperature: 20.0, weather: "Sunny"))
+                            print("Added outfit with tone-on-tone colors")
+                        }
+                        
+                        // Example: Pastel Colors
+                        if pastelColors.contains(topColor) && pastelColors.contains(bottomColor) {
+                            outfits.append(Outfit(top: top, bottom: bottom, shoes: shoe, outer: outer, temperature: 20.0, weather: "Sunny"))
+                            print("Added outfit with pastel colors")
+                        }
                     }
                 }
             }
@@ -104,7 +172,7 @@ class TodayViewModel {
         image: UIImage,
         category: Category,
         colors: [String], // Change to array
-        style: String,
+        style: Style, // Change to Style type
         seasons: [Season]
     ) -> Completable {
         return Completable.create { [weak self] completable in
@@ -123,7 +191,7 @@ class TodayViewModel {
                 item.id = imageId
                 item.category = category.rawValue
                 item.colors.append(objectsIn: colors) // Use array
-                item.style = style
+                item.style = style.rawValue // Store as String
                 item.seasons.append(objectsIn: seasons.map { $0.rawValue })
                 
                 try self.realm.write {
