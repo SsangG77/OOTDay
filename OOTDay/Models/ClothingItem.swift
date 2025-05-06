@@ -2,10 +2,10 @@ import Foundation
 import RealmSwift
 
 enum Category: String, CaseIterable {
-    case outer = "겉옷"
-    case top = "상의"
-    case bottom = "하의"
-    case shoes = "신발"
+    case Outer = "Outer"
+    case Top = "Top"
+    case Bottom = "Bottom"
+    case Shoes = "Shoes"
 }
 
 enum Season: String, CaseIterable {
@@ -29,7 +29,7 @@ class ClothingItem: Object {
         self.category = category.rawValue
         self.imageUrl = imageUrl
         self.colors.append(objectsIn: colors)
-        self.style = style.rawValue // Directly assign Style
+        self.style = style.rawValue
         self.seasons.append(objectsIn: seasons.map { $0.rawValue })
     }
 

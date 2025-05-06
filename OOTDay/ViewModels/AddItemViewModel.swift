@@ -69,4 +69,31 @@ class AddItemViewModel {
             .map { $0.trimmingCharacters(in: .whitespaces) }
             .filter { !$0.isEmpty }
     }
+
+
+    func changeStyleEnum(style: String) -> Style {
+        print(#function, #line)
+    switch style {
+    case "캐주얼":
+        return Style.casual
+    case "포멀":
+        return Style.formal
+    case "스포티":
+        return Style.sporty
+    case "빈티지":
+        return Style.vintage
+    case "보헤미안":
+        return Style.bohemian
+    case "시크":
+        return Style.chic
+    case "프레피":
+        return Style.preppy
+    case "펑크":
+        return Style.punk
+    default:
+        return Style.casual
+    }
+
+    }
+
 } 

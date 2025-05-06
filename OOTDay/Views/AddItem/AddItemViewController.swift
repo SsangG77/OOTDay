@@ -374,6 +374,10 @@ class AddItemViewController: BaseViewController {
         categories.forEach { category in
             let action = UIAlertAction(title: category, style: .default) { [weak self] _ in
                 self?.selectedCategory = category
+                print("category: \(category)")
+                print("Selected Category: \(self?.selectedCategory)")
+                let category_ = Category(rawValue: self?.selectedCategory ?? "")
+                print("Selected Category: \(category_)")
             }
             alert.addAction(action)
         }
@@ -391,22 +395,31 @@ class AddItemViewController: BaseViewController {
     }
 
     private func saveChanges() {
-        guard let item = clothingItem else { return }
-        
-        // Update item properties with user changes
-        // Example: item.category = selectedCategory
-        // Update other properties like colors, style, and seasons
-        
-        // Save changes to Realm
-        do {
-            let realm = try Realm()
-            try realm.write {
-                realm.add(item, update: .modified)
-            }
-            navigationController?.popViewController(animated: true)
-        } catch {
-            print("Error saving changes: \(error)")
+        print(#function, #line)
+        guard let image = photoImageView.image,
+              let categoryTitle = selectedCategory,
+              let category = Category(rawValue: categoryTitle),
+              let styleTitle = styleButton.title(for: .normal),
+              !selectedSeasons.isEmpty else {
+            print("Missing required fields")
+            print("Image: \(photoImageView.image != nil)")
+            print("Category: \(Category(rawValue: selectedCategory ?? ""))")
+            print("Style: \(styleButton.title(for: .normal))")
+            print("Seasons: \(selectedSeasons)")
+            return
         }
+        let style = viewModel.changeStyleEnum(style: styleTitle)
+        let colors = viewModel.parseColors(colorPickerButton.title(for: .normal) ?? "")
+        let seasons = selectedSeasons.compactMap { Season(rawValue: $0) }
+
+        viewModel.saveItem(image: image, category: category, colors: colors, style: style, seasons: seasons)
+            .subscribe(onCompleted: {
+                print("Item saved successfully")
+                self.dismiss(animated: true)
+            }, onError: { error in
+                print("Error saving item: \(error)")
+            })
+            .disposed(by: disposeBag)
     }
     
     @objc private func dismissKeyboard() {

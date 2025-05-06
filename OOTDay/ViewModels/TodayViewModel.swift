@@ -93,10 +93,10 @@ class TodayViewModel {
             }
 
             // Filter clothes by category and selected style
-            let tops = availableClothes.filter { $0.category == Category.top.rawValue && $0.styleEnum == selectedStyle }
-            let bottoms = availableClothes.filter { $0.category == Category.bottom.rawValue && $0.styleEnum == selectedStyle }
-            let shoes = availableClothes.filter { $0.category == Category.shoes.rawValue && $0.styleEnum == selectedStyle }
-            let outers = availableClothes.filter { $0.category == Category.outer.rawValue && $0.styleEnum == selectedStyle }
+            let tops = availableClothes.filter { $0.category == Category.Top.rawValue && $0.styleEnum == selectedStyle }
+            let bottoms = availableClothes.filter { $0.category == Category.Bottom.rawValue && $0.styleEnum == selectedStyle }
+            let shoes = availableClothes.filter { $0.category == Category.Shoes.rawValue && $0.styleEnum == selectedStyle }
+            let outers = availableClothes.filter { $0.category == Category.Outer.rawValue && $0.styleEnum == selectedStyle }
             
             print("Filtered tops: \(tops.count), bottoms: \(bottoms.count), shoes: \(shoes.count), outers: \(outers.count)")
             
@@ -165,46 +165,6 @@ class TodayViewModel {
         guard let outfit = outfitRelay.value else { return }
         outfit.isFavorite.toggle()
         // TODO: Save to Realm
-    }
-    
-    // Update saveItem to use colors array
-    func saveItem(
-        image: UIImage,
-        category: Category,
-        colors: [String], // Change to array
-        style: Style, // Change to Style type
-        seasons: [Season]
-    ) -> Completable {
-        return Completable.create { [weak self] completable in
-            guard let self = self else {
-                completable(.error(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "ViewModel is nil"])))
-                return Disposables.create()
-            }
-            
-            // Save image first
-            do {
-                let imageId = UUID().uuidString
-                try self.imageStorage.saveImage(image, withName: imageId)
-                
-                // Create and save ClothingItem
-                let item = ClothingItem()
-                item.id = imageId
-                item.category = category.rawValue
-                item.colors.append(objectsIn: colors) // Use array
-                item.style = style.rawValue // Store as String
-                item.seasons.append(objectsIn: seasons.map { $0.rawValue })
-                
-                try self.realm.write {
-                    self.realm.add(item)
-                }
-                
-                completable(.completed)
-            } catch {
-                completable(.error(error))
-            }
-            
-            return Disposables.create()
-        }
     }
     
     private func getSelectedStyle() -> Style {

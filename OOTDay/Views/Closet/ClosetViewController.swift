@@ -29,7 +29,7 @@ class ClosetViewController: BaseViewController {
         $0.translatesAutoresizingMaskIntoConstraints = false
     }
     
-    private lazy var categories = ["All", "Outer", "Tops", "Bottoms", "Shoes"].map { category in
+    private lazy var categories = ["All", "Outer", "Top", "Bottom", "Shoes"].map { category in
         let button = UIButton()
         button.setTitle(category, for: .normal)
         button.titleLabel?.font = .systemFont(ofSize: 20, weight: .medium)
@@ -170,13 +170,13 @@ class ClosetViewController: BaseViewController {
         case 0:
             category = nil
         case 1:
-            category = .outer
+            category = .Outer
         case 2:
-            category = .top
+            category = .Top
         case 3:
-            category = .bottom
+            category = .Bottom
         case 4:
-            category = .shoes
+            category = .Shoes
         default:
             category = nil
         }
