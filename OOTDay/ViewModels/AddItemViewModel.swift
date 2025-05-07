@@ -17,7 +17,7 @@ class AddItemViewModel {
         image: UIImage,
         category: Category,
         colors: [String],
-        style: Style,
+        styles: [Style],
         seasons: [Season]
     ) -> Completable {
         return Completable.create { [weak self] completable in
@@ -36,7 +36,7 @@ class AddItemViewModel {
                 item.id = imageId
                 item.category = category.rawValue
                 item.colors.append(objectsIn: colors)
-                item.styleEnum = style
+                item.styles.append(objectsIn: styles.map { $0.rawValue })
                 item.seasons.append(objectsIn: seasons.map { $0.rawValue })
                 
                 try self.realm.write {

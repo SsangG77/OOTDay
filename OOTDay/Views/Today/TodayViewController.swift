@@ -266,10 +266,21 @@ class TodayViewController: BaseViewController {
             })
             .disposed(by: disposeBag)
         
-        // Subscribe to closet items to update emptyOutfitMessageLabel visibility
-        viewModel.closetViewModel.items
-            .map { !$0.isEmpty }
-            .drive(emptyOutfitMessageLabel.rx.isHidden)
+        // Convert messageRelay to Driver to use drive method
+        viewModel.messageRelay
+            .asDriver(onErrorJustReturn: nil)
+            .compactMap { $0 }
+            .drive(onNext: { [weak self] message in
+                self?.emptyOutfitMessageLabel.text = message
+                self?.emptyOutfitMessageLabel.isHidden = false
+            })
+            .disposed(by: disposeBag)
+        
+        // Hide the message label when an outfit is available
+        viewModel.currentOutfit
+            .drive(onNext: { [weak self] outfit in
+                self?.emptyOutfitMessageLabel.isHidden = outfit != nil
+            })
             .disposed(by: disposeBag)
         
         // Update setupBindings to handle styleButton tap

@@ -19,6 +19,10 @@ class TodayViewModel {
     private let imageStorage = ImageStorageService.shared
     private let realm = try! Realm()
     private var selectedStyle: Style = .casual
+    private var selectedStyles: Set<String> = []
+    
+    // Add a message relay to communicate messages to the view controller
+    let messageRelay = BehaviorRelay<String?>(value: nil)
     
     init() {
         currentOutfit = outfitRelay.asDriver()
@@ -58,9 +62,7 @@ class TodayViewModel {
             print("Available clothes for season: \(currentSeason): \(availableClothes.count)")
             
             // Debug: Print each item's style
-            for item in availableClothes {
-                print("Item ID: \(item.id), Style: \(item.style)")
-            }
+          
             
             // Define color palettes
             let neutralColors = [UIColor.white, UIColor.black, UIColor.gray]
@@ -92,13 +94,20 @@ class TodayViewModel {
                 return UIColor(red: red, green: green, blue: blue, alpha: 1.0)
             }
 
-            // Filter clothes by category and selected style
-            let tops = availableClothes.filter { $0.category == Category.Top.rawValue && $0.styleEnum == selectedStyle }
-            let bottoms = availableClothes.filter { $0.category == Category.Bottom.rawValue && $0.styleEnum == selectedStyle }
-            let shoes = availableClothes.filter { $0.category == Category.Shoes.rawValue && $0.styleEnum == selectedStyle }
-            let outers = availableClothes.filter { $0.category == Category.Outer.rawValue && $0.styleEnum == selectedStyle }
+            // Update filtering logic to handle multiple styles
+            let tops = availableClothes.filter { $0.category == Category.Top.rawValue && !Set(Array($0.styles)).isDisjoint(with: selectedStyles) }
+            let bottoms = availableClothes.filter { $0.category == Category.Bottom.rawValue && !Set(Array($0.styles)).isDisjoint(with: selectedStyles) }
+            let shoes = availableClothes.filter { $0.category == Category.Shoes.rawValue && !Set(Array($0.styles)).isDisjoint(with: selectedStyles) }
+            let outers = availableClothes.filter { $0.category == Category.Outer.rawValue && !Set(Array($0.styles)).isDisjoint(with: selectedStyles) }
             
             print("Filtered tops: \(tops.count), bottoms: \(bottoms.count), shoes: \(shoes.count), outers: \(outers.count)")
+            
+            // Update messageRelay with appropriate messages
+            if tops.isEmpty || bottoms.isEmpty || shoes.isEmpty {
+                messageRelay.accept("카테고리에 해당하는 옷이 없어요!")
+                outfitRelay.accept(nil)
+                return
+            }
             
             // Generate outfits based on color combinations
             var outfits: [Outfit] = []
@@ -145,6 +154,12 @@ class TodayViewModel {
                 }
             }
             
+            if outfits.isEmpty {
+                messageRelay.accept("색상 조합에 맞는 코디를 찾을 수 없어요!")
+                outfitRelay.accept(nil)
+                return
+            }
+            
             // Randomly select one outfit from the generated outfits
             if let randomOutfit = outfits.randomElement() {
                 outfitRelay.accept(randomOutfit)
@@ -173,5 +188,9 @@ class TodayViewModel {
     
     func updateSelectedStyle(_ style: Style) {
         selectedStyle = style
+    }
+    
+    func updateSelectedStyles(_ styles: [String]) {
+        selectedStyles = Set(styles)
     }
 } 

@@ -20,26 +20,16 @@ class ClothingItem: Object {
     @Persisted var category: String // Category의 rawValue
     @Persisted var imageUrl: String
     @Persisted var colors = List<String>()
-    @Persisted var style: String // String으로 변경
+    @Persisted var styles = List<String>() // Store multiple styles
     @Persisted var seasons = List<String>() // Season의 rawValue
     @Persisted var createdAt = Date()
     
-    convenience init(category: Category, imageUrl: String, colors: [String], style: Style, seasons: [Season]) {
+    convenience init(category: Category, imageUrl: String, colors: [String], styles: [Style], seasons: [Season]) {
         self.init()
         self.category = category.rawValue
         self.imageUrl = imageUrl
         self.colors.append(objectsIn: colors)
-        self.style = style.rawValue
+        self.styles.append(objectsIn: styles.map { $0.rawValue })
         self.seasons.append(objectsIn: seasons.map { $0.rawValue })
-    }
-
-    // Computed property to get and set Style
-    var styleEnum: Style? {
-        get {
-            return Style(rawValue: style)
-        }
-        set {
-            style = newValue?.rawValue ?? "casual"
-        }
     }
 } 

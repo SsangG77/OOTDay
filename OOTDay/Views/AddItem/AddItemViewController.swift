@@ -164,6 +164,9 @@ class AddItemViewController: BaseViewController {
     // Add a property to hold the ClothingItem being edited
     var clothingItem: ClothingItem?
     
+    // Modify the style selection logic to allow multiple styles to be selected
+    private var selectedStyles: Set<String> = []
+    
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -433,16 +436,22 @@ class AddItemViewController: BaseViewController {
     }
     
     private func showStyleActionSheet() {
-        let alert = UIAlertController(title: "Select Style", message: nil, preferredStyle: .actionSheet)
+        let alert = UIAlertController(title: "Select Styles", message: nil, preferredStyle: .actionSheet)
         
         styles.forEach { style in
             let action = UIAlertAction(title: style, style: .default) { [weak self] _ in
-                self?.styleButton.setTitle(style, for: .normal)
+                if self?.selectedStyles.contains(style) == true {
+                    self?.selectedStyles.remove(style)
+                } else {
+                    self?.selectedStyles.insert(style)
+                }
+                self?.styleButton.setTitle(self?.selectedStyles.joined(separator: ", ") ?? "Select Styles", for: .normal)
             }
+            action.setValue(self?.selectedStyles.contains(style), forKey: "checked")
             alert.addAction(action)
         }
         
-        let cancelAction = UIAlertAction(title: "Cancel", style: .cancel)
+        let cancelAction = UIAlertAction(title: "Done", style: .cancel)
         alert.addAction(cancelAction)
         
         // iPad support
