@@ -10,7 +10,7 @@ class AddItemViewModel {
     
     // MARK: - Private
     private let disposeBag = DisposeBag()
-    private let realm = try! Realm()
+    private let realm = try! Realm() // AppDelegate에서 설정한 기본 설정 사용
     private let imageStorage = ImageStorageService.shared
     
     func saveItem(
@@ -26,6 +26,9 @@ class AddItemViewModel {
                 return Disposables.create()
             }
             
+            print("DEBUG - saveItem - Seasons: \(seasons)")
+            print("DEBUG - saveItem - Seasons raw values: \(seasons.map { $0.rawValue })")
+            
             // Save image first
             do {
                 let imageId = UUID().uuidString
@@ -37,14 +40,31 @@ class AddItemViewModel {
                 item.category = category.rawValue
                 item.colors.append(objectsIn: colors)
                 item.styles.append(objectsIn: styles.map { $0.rawValue })
-                item.seasons.append(objectsIn: seasons.map { $0.rawValue })
+                
+                // 확인: seasons 배열이 비어있지 않은지 체크
+                if seasons.isEmpty {
+                    print("DEBUG - ERROR: seasons array is empty!")
+                    completable(.error(NSError(domain: "", code: -2, userInfo: [NSLocalizedDescriptionKey: "Seasons array is empty"])))
+                    return Disposables.create()
+                } else {
+                    let seasonValues = seasons.map { $0.rawValue }
+                    print("DEBUG - Adding seasons: \(seasonValues)")
+                    
+                    // 시즌이 제대로 추가되었는지 확인
+                    for season in seasonValues {
+                        item.seasons.append(season)
+                        print("DEBUG - Added season: \(season) to item \(item.id)")
+                    }
+                }
                 
                 try self.realm.write {
                     self.realm.add(item)
+                    print("DEBUG - Item saved with seasons: \(Array(item.seasons))")
                 }
                 
                 completable(.completed)
             } catch {
+                print("DEBUG - Error saving item: \(error)")
                 completable(.error(error))
             }
             
@@ -53,11 +73,11 @@ class AddItemViewModel {
     }
     
     // MARK: - Validation
-    func validateInput(image: UIImage?, category: Category?, colors: [String], style: Style?, seasons: [Season]) -> Bool {
+    func validateInput(image: UIImage?, category: Category?, colors: [String], styles: [Style]?, seasons: [Season]) -> Bool {
         guard image != nil else { return false }
         guard category != nil else { return false }
         guard !colors.isEmpty else { return false }
-        guard style != nil else { return false }
+        guard let styles = styles, !styles.isEmpty else { return false }
         guard !seasons.isEmpty else { return false }
         
         return true

@@ -79,20 +79,39 @@ class AddItemViewController: BaseViewController {
         $0.textColor = .black
     }
     
+    private let styleContainerView = UIView().then {
+        $0.backgroundColor = .clear
+    }
+    
     private let styleLabel = UILabel().then {
         $0.text = "Style"
         $0.font = .systemFont(ofSize: 20, weight: .medium)
         $0.textColor = .black
     }
     
-    private let styleButton = UIButton().then {
-        $0.setTitle("Select Style", for: .normal)
-        $0.setTitleColor(.black, for: .normal)
-        $0.titleLabel?.font = .systemFont(ofSize: 18)
-        $0.backgroundColor = .white
-        $0.layer.cornerRadius = 12
-        $0.layer.borderWidth = 1
-        $0.layer.borderColor = UIColor.black.withAlphaComponent(0.2).cgColor
+    private let styleScrollView = UIScrollView().then {
+        $0.showsHorizontalScrollIndicator = true
+        $0.showsVerticalScrollIndicator = false
+    }
+    
+    private let styleStackView = UIStackView().then {
+        $0.axis = .horizontal
+        $0.spacing = 12
+        $0.distribution = .fillProportionally
+        $0.alignment = .center
+    }
+    
+    private lazy var styleButtons: [UIButton] = ["캐주얼", "포멀", "스포티", "빈티지", "보헤미안", "시크", "프레피", "펑크"].map { style in
+        let button = UIButton()
+        button.setTitle(style, for: .normal)
+        button.setTitleColor(.black, for: .normal)
+        button.titleLabel?.font = .systemFont(ofSize: 16)
+        button.backgroundColor = .white
+        button.layer.cornerRadius = 12
+        button.layer.borderWidth = 1
+        button.layer.borderColor = UIColor.black.withAlphaComponent(0.2).cgColor
+        button.contentEdgeInsets = UIEdgeInsets(top: 8, left: 16, bottom: 8, right: 16)
+        return button
     }
     
     private let seasonStackView = UIStackView().then {
@@ -157,15 +176,13 @@ class AddItemViewController: BaseViewController {
     }
     
     private var selectedSeasons: Set<String> = []
+    private var selectedStyles: Set<String> = []
     
     // Update styles array to use Korean names
     private let styles = ["캐주얼", "포멀", "스포티", "빈티지", "보헤미안", "시크", "프레피", "펑크"]
     
     // Add a property to hold the ClothingItem being edited
     var clothingItem: ClothingItem?
-    
-    // Modify the style selection logic to allow multiple styles to be selected
-    private var selectedStyles: Set<String> = []
     
     // MARK: - Lifecycle
     override func viewDidLoad() {
@@ -192,6 +209,15 @@ class AddItemViewController: BaseViewController {
             roundedRect: photoContainerView.bounds,
             cornerRadius: 16
         ).cgPath
+        
+        // 스타일 스크롤뷰의 콘텐츠 크기 설정
+        styleStackView.layoutIfNeeded()
+        let contentWidth = styleStackView.frame.width
+        if contentWidth > styleScrollView.frame.width {
+            styleScrollView.contentSize = CGSize(width: contentWidth, height: styleScrollView.frame.height)
+        } else {
+            styleScrollView.contentSize = CGSize(width: styleScrollView.frame.width, height: styleScrollView.frame.height)
+        }
     }
     
     // MARK: - Setup
@@ -202,7 +228,7 @@ class AddItemViewController: BaseViewController {
         photoContainerView.layer.addSublayer(dashedBorderLayer)
         
         [titleLabel, photoContainerView, categoryLabel, categoryButton, colorLabel,
-         styleLabel, styleButton, seasonStackView, buttonStackView, colorPickerButton].forEach {
+         styleContainerView, seasonStackView, buttonStackView, colorPickerButton].forEach {
             view.addSubview($0)
         }
         
@@ -215,6 +241,14 @@ class AddItemViewController: BaseViewController {
         
         [cameraIcon, photoLabel].forEach {
             photoPlaceholderStack.addArrangedSubview($0)
+        }
+        
+        styleContainerView.addSubview(styleLabel)
+        styleContainerView.addSubview(styleScrollView)
+        styleScrollView.addSubview(styleStackView)
+        
+        styleButtons.forEach {
+            styleStackView.addArrangedSubview($0)
         }
         
         seasonButtons.forEach {
@@ -259,20 +293,32 @@ class AddItemViewController: BaseViewController {
             $0.leading.equalToSuperview().offset(20)
         }
         
-        styleLabel.snp.makeConstraints {
+        styleContainerView.snp.makeConstraints {
             $0.top.equalTo(colorLabel.snp.bottom).offset(24)
-            $0.leading.equalToSuperview().offset(20)
-        }
-        
-        styleButton.snp.makeConstraints {
-            $0.centerY.equalTo(styleLabel)
-            $0.trailing.equalToSuperview().offset(-20)
-            $0.width.equalTo(180)
+            $0.leading.trailing.equalToSuperview().inset(20)
             $0.height.equalTo(44)
         }
         
+        styleLabel.snp.makeConstraints {
+            $0.centerY.equalToSuperview()
+            $0.leading.equalToSuperview()
+            $0.width.equalTo(50)
+        }
+        
+        styleScrollView.snp.makeConstraints {
+            $0.centerY.equalToSuperview()
+            $0.leading.equalTo(styleLabel.snp.trailing).offset(12)
+            $0.trailing.equalToSuperview()
+            $0.height.equalTo(44)
+        }
+        
+        styleStackView.snp.makeConstraints {
+            $0.edges.equalToSuperview()
+            $0.height.equalTo(styleScrollView.snp.height)
+        }
+        
         seasonStackView.snp.makeConstraints {
-            $0.top.equalTo(styleLabel.snp.bottom).offset(24)
+            $0.top.equalTo(styleContainerView.snp.bottom).offset(24)
             $0.leading.trailing.equalToSuperview().inset(20)
             $0.height.equalTo(44)
         }
@@ -340,11 +386,13 @@ class AddItemViewController: BaseViewController {
             .disposed(by: disposeBag)
         
         // Style button
-        styleButton.rx.tap
-            .subscribe(onNext: { [weak self] in
-                self?.showStyleActionSheet()
-            })
-            .disposed(by: disposeBag)
+        styleButtons.forEach { button in
+            button.rx.tap
+                .subscribe(onNext: { [weak self] in
+                    self?.toggleStyleButton(button)
+                })
+                .disposed(by: disposeBag)
+        }
     }
     
     // MARK: - Private Methods
@@ -359,15 +407,35 @@ class AddItemViewController: BaseViewController {
         let button = seasonButtons[index]
         button.isSelected.toggle()
         
+        // 시즌 이름은 정확히 enum의 rawValue와 일치해야 함
         let season = ["Spring", "Summer", "Fall", "Winter"][index]
+        
         if button.isSelected {
             button.backgroundColor = .black
             button.setTitleColor(.white, for: .normal)
             selectedSeasons.insert(season)
+            print("DEBUG - Toggle season ON: \(season), Season enum: \(Season(rawValue: season)?.rawValue ?? "nil")")
         } else {
             button.backgroundColor = .white
             button.setTitleColor(.black, for: .normal)
             selectedSeasons.remove(season)
+            print("DEBUG - Toggle season OFF: \(season)")
+        }
+    }
+    
+    private func toggleStyleButton(_ button: UIButton) {
+        button.isSelected.toggle()
+        
+        guard let styleTitle = button.title(for: .normal) else { return }
+        
+        if button.isSelected {
+            button.backgroundColor = .black
+            button.setTitleColor(.white, for: .normal)
+            selectedStyles.insert(styleTitle)
+        } else {
+            button.backgroundColor = .white
+            button.setTitleColor(.black, for: .normal)
+            selectedStyles.remove(styleTitle)
         }
     }
     
@@ -402,20 +470,44 @@ class AddItemViewController: BaseViewController {
         guard let image = photoImageView.image,
               let categoryTitle = selectedCategory,
               let category = Category(rawValue: categoryTitle),
-              let styleTitle = styleButton.title(for: .normal),
+              !selectedStyles.isEmpty,
               !selectedSeasons.isEmpty else {
             print("Missing required fields")
             print("Image: \(photoImageView.image != nil)")
             print("Category: \(Category(rawValue: selectedCategory ?? ""))")
-            print("Style: \(styleButton.title(for: .normal))")
+            print("Styles: \(selectedStyles)")
             print("Seasons: \(selectedSeasons)")
             return
         }
-        let style = viewModel.changeStyleEnum(style: styleTitle)
+        
+        // 시즌 변환 디버그
+        print("DEBUG - SEASONS CONVERSION START")
+        print("DEBUG - Selected seasons: \(selectedSeasons)")
+        var debugSeasons: [Season] = []
+        for seasonStr in selectedSeasons {
+            if let season = Season(rawValue: seasonStr) {
+                debugSeasons.append(season)
+                print("DEBUG - Converted \(seasonStr) to \(season) with rawValue \(season.rawValue)")
+            } else {
+                print("DEBUG - Failed to convert \(seasonStr) to Season enum")
+            }
+        }
+        
+        let styles = selectedStyles.compactMap { viewModel.changeStyleEnum(style: $0) }
         let colors = viewModel.parseColors(colorPickerButton.title(for: .normal) ?? "")
         let seasons = selectedSeasons.compactMap { Season(rawValue: $0) }
+        
+        print("DEBUG - Selected seasons: \(selectedSeasons)")
+        print("DEBUG - Converted seasons: \(seasons)")
+        print("DEBUG - Seasons raw values: \(seasons.map { $0.rawValue })")
+        
+        // 모든 시즌 enum 출력
+        print("DEBUG - All Season enum values:")
+        for season in Season.allCases {
+            print("DEBUG - Season.\(season) = \(season.rawValue)")
+        }
 
-        viewModel.saveItem(image: image, category: category, colors: colors, style: style, seasons: seasons)
+        viewModel.saveItem(image: image, category: category, colors: colors, styles: styles, seasons: seasons)
             .subscribe(onCompleted: {
                 print("Item saved successfully")
                 self.dismiss(animated: true)
@@ -433,34 +525,6 @@ class AddItemViewController: BaseViewController {
         let colorPicker = UIColorPickerViewController()
         colorPicker.delegate = self
         present(colorPicker, animated: true)
-    }
-    
-    private func showStyleActionSheet() {
-        let alert = UIAlertController(title: "Select Styles", message: nil, preferredStyle: .actionSheet)
-        
-        styles.forEach { style in
-            let action = UIAlertAction(title: style, style: .default) { [weak self] _ in
-                if self?.selectedStyles.contains(style) == true {
-                    self?.selectedStyles.remove(style)
-                } else {
-                    self?.selectedStyles.insert(style)
-                }
-                self?.styleButton.setTitle(self?.selectedStyles.joined(separator: ", ") ?? "Select Styles", for: .normal)
-            }
-            action.setValue(self?.selectedStyles.contains(style), forKey: "checked")
-            alert.addAction(action)
-        }
-        
-        let cancelAction = UIAlertAction(title: "Done", style: .cancel)
-        alert.addAction(cancelAction)
-        
-        // iPad support
-        if let popoverController = alert.popoverPresentationController {
-            popoverController.sourceView = styleButton
-            popoverController.sourceRect = styleButton.bounds
-        }
-        
-        present(alert, animated: true)
     }
 }
 

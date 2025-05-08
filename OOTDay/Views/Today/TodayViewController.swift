@@ -89,7 +89,7 @@ class TodayViewController: BaseViewController {
     
     // Add a style selection button
     private let styleButton = UIButton(type: .system).then {
-        $0.setTitle("Select Style", for: .normal)
+        $0.setTitle("캐주얼", for: .normal)
         $0.titleLabel?.font = .systemFont(ofSize: 18, weight: .semibold)
         $0.setTitleColor(.white, for: .normal)
         $0.backgroundColor = UIColor(white: 0.2, alpha: 1.0)
@@ -130,6 +130,9 @@ class TodayViewController: BaseViewController {
         super.viewDidLoad()
         view.backgroundColor = UIColor(red: 247/255, green: 143/255, blue: 67/255, alpha: 1)
         updateWeatherInfo()
+        
+        // 기본 스타일을 캐주얼로 설정
+        viewModel.updateSelectedStyle(.casual)
         
         // Set the current date in the format 'Tue, Apr 23'
         let dateFormatter = DateFormatter()
