@@ -223,12 +223,13 @@ extension ClosetViewController: UICollectionViewDelegateFlowLayout {
 // MARK: - ClothingItemCell
 class ClothingItemCell: UICollectionViewCell {
     private let containerView = UIView().then {
-        $0.backgroundColor = UIColor(white: 0.95, alpha: 1.0)
+        $0.backgroundColor = /*UIColor(white: 0.95, alpha: 1.0)*/ .red
         $0.layer.cornerRadius = 16
+        $0.clipsToBounds = true // 이미지가 컨테이너 밖으로 넘치지 않도록 설정
     }
     
     private let imageView = UIImageView().then {
-        $0.contentMode = .scaleAspectFill
+        $0.contentMode = .scaleAspectFill // 이미지를 꽉 채우도록 설정
         $0.clipsToBounds = true
         $0.backgroundColor = .clear
     }
@@ -251,7 +252,7 @@ class ClothingItemCell: UICollectionViewCell {
         }
         
         imageView.snp.makeConstraints {
-            $0.edges.equalToSuperview().inset(8)
+            $0.edges.equalToSuperview() // inset 제거하여 이미지가 컨테이너에 꽉 차도록 설정
         }
     }
     

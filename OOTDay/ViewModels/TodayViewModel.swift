@@ -150,12 +150,19 @@ class TodayViewModel {
             return
         }
         
-        // Generate outfits based on color combinations
-        var outfits: [Outfit] = []
+        // Generate outfits based on color combinations (색상 조합에 맞는 코디)
+        var colorMatchedOutfits: [Outfit] = []
+        // 모든 가능한 조합의 코디들 (색상 조합과 상관없이)
+        var allPossibleOutfits: [Outfit] = []
+        
         for top in tops {
             for bottom in bottoms {
                 for shoe in shoes {
                     let outer = outers.first
+                    
+                    // 모든 가능한 조합을 추가
+                    let outfit = Outfit(top: top, bottom: bottom, shoes: shoe, outer: outer, temperature: 20.0, weather: "Sunny")
+                    allPossibleOutfits.append(outfit)
                     
                     // Convert first color from hex to UIColor
                     let topColor = top.colors.first.map { colorFromHex($0) } ?? UIColor.clear
@@ -164,45 +171,52 @@ class TodayViewModel {
 
                     // Example: Neutral + Point Color
                     if neutralColors.contains(topColor) || neutralColors.contains(bottomColor) {
-                        outfits.append(Outfit(top: top, bottom: bottom, shoes: shoe, outer: outer, temperature: 20.0, weather: "Sunny"))
+                        colorMatchedOutfits.append(outfit)
                         print("Added outfit with neutral + point color")
                     }
                     
                     // Example: Analogous Colors
-                    if colorDistance(topColor, bottomColor) < 0.2 {
-                        outfits.append(Outfit(top: top, bottom: bottom, shoes: shoe, outer: outer, temperature: 20.0, weather: "Sunny"))
+                    else if colorDistance(topColor, bottomColor) < 0.2 {
+                        colorMatchedOutfits.append(outfit)
                         print("Added outfit with analogous colors")
                     }
                     
                     // Example: Complementary Colors
-                    if colorDistance(topColor, shoeColor) > 0.5 {
-                        outfits.append(Outfit(top: top, bottom: bottom, shoes: shoe, outer: outer, temperature: 20.0, weather: "Sunny"))
+                    else if colorDistance(topColor, shoeColor) > 0.5 {
+                        colorMatchedOutfits.append(outfit)
                         print("Added outfit with complementary colors")
                     }
                     
                     // Example: Tone-on-Tone
-                    if colorDistance(topColor, bottomColor) < 0.1 {
-                        outfits.append(Outfit(top: top, bottom: bottom, shoes: shoe, outer: outer, temperature: 20.0, weather: "Sunny"))
+                    else if colorDistance(topColor, bottomColor) < 0.1 {
+                        colorMatchedOutfits.append(outfit)
                         print("Added outfit with tone-on-tone colors")
                     }
                     
                     // Example: Pastel Colors
-                    if pastelColors.contains(topColor) && pastelColors.contains(bottomColor) {
-                        outfits.append(Outfit(top: top, bottom: bottom, shoes: shoe, outer: outer, temperature: 20.0, weather: "Sunny"))
+                    else if pastelColors.contains(topColor) && pastelColors.contains(bottomColor) {
+                        colorMatchedOutfits.append(outfit)
                         print("Added outfit with pastel colors")
                     }
                 }
             }
         }
         
-        if outfits.isEmpty {
-            messageRelay.accept("색상 조합에 맞는 코디를 찾을 수 없어요!")
+        // 색상 조합에 맞는 코디가 있으면 그 중에서 선택, 없으면 모든 조합 중에서 선택
+        let outfitsToChooseFrom = colorMatchedOutfits.isEmpty ? allPossibleOutfits : colorMatchedOutfits
+        
+        if outfitsToChooseFrom.isEmpty {
+            messageRelay.accept("코디를 생성할 수 없어요!")
             outfitRelay.accept(nil)
             return
         }
         
         // Randomly select one outfit from the generated outfits
-        if let randomOutfit = outfits.randomElement() {
+        if let randomOutfit = outfitsToChooseFrom.randomElement() {
+            print("코디 생성 완료: \(randomOutfit.top?.id ?? "없음") / \(randomOutfit.bottom?.id ?? "없음") / \(randomOutfit.shoes?.id ?? "없음")")
+            if colorMatchedOutfits.isEmpty {
+                print("색상 조합에 맞는 코디가 없어서 임의로 선택했습니다.")
+            }
             outfitRelay.accept(randomOutfit)
         } else {
             print("적절한 코디를 생성할 수 없습니다.")

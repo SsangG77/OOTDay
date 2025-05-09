@@ -36,30 +36,27 @@ class TodayViewController: BaseViewController {
         $0.textColor = .black
     }
     
-     private let outfitView = UIView().then {
-        //  $0.backgroundColor = .red
-         $0.heightAnchor.constraint(equalToConstant: CGFloat((260 * 4) + (25 * 3))).isActive = true // Restore fixed height
-     }
+     private let outfitView = UIView()
     
     private let topImageView = UIImageView().then {
-        $0.contentMode = .scaleAspectFit
-        $0.backgroundColor = .clear
-        // $0.layer.cornerRadius = 8
+        $0.contentMode = .scaleAspectFill
+        $0.backgroundColor = .systemGray.withAlphaComponent(0.3)
         $0.clipsToBounds = true
+        $0.layer.cornerRadius = 12
     }
     
     private let bottomImageView = UIImageView().then {
-        $0.contentMode = .scaleAspectFit
-        $0.backgroundColor = .clear
-        // $0.layer.cornerRadius = 8
+        $0.contentMode = .scaleAspectFill
+        $0.backgroundColor = .systemGray.withAlphaComponent(0.3)
         $0.clipsToBounds = true
+        $0.layer.cornerRadius = 12
     }
     
     private let shoesImageView = UIImageView().then {
-        $0.contentMode = .scaleAspectFit
-        $0.backgroundColor = .clear
-        // $0.layer.cornerRadius = 8
+        $0.contentMode = .scaleAspectFill
+        $0.backgroundColor = .systemGray.withAlphaComponent(0.3)
         $0.clipsToBounds = true
+        $0.layer.cornerRadius = 12
     }
     
     private let buttonStackView = UIStackView().then {
@@ -101,25 +98,12 @@ class TodayViewController: BaseViewController {
     
     // Add outerImageView to display outer clothing
     private let outerImageView = UIImageView().then {
-        $0.contentMode = .scaleAspectFit
-        $0.backgroundColor = .clear
-        // $0.layer.cornerRadius = 8
+        $0.contentMode = .scaleAspectFill
+        $0.backgroundColor = .systemGray.withAlphaComponent(0.3)
         $0.clipsToBounds = true
+        $0.layer.cornerRadius = 12
         $0.isHidden = true // Initially hidden
-        
     }
-    
-    // Add scrollView to allow scrolling
-    private let scrollView = UIScrollView().then {
-        $0.showsVerticalScrollIndicator = true
-        $0.showsHorizontalScrollIndicator = false
-        $0.alwaysBounceHorizontal = false // Disable horizontal scrolling
-    }
-    
-    // Add contentView inside scrollView
-    // private let contentView = UIView().then {
-    //     $0.backgroundColor = .clear
-    // }
     
     // MARK: - Properties
     private let viewModel = TodayViewModel()
@@ -138,43 +122,35 @@ class TodayViewController: BaseViewController {
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "E, MMM d"
         dateLabel.text = dateFormatter.string(from: Date())
+        
+        // 디버깅: 모든 이미지뷰를 강제로 표시
+        topImageView.isHidden = false
+        bottomImageView.isHidden = false
+        shoesImageView.isHidden = false
+        
+        print("DEBUG - viewDidLoad completed")
     }
     
     // MARK: - Setup
     override func setupViews() {
         super.setupViews()
         
-        [dateLabel, weatherIcon, weatherLabel, titleLabel, buttonStackView, scrollView].forEach {
+        // 메인 뷰에 추가되는 뷰들
+        [dateLabel, weatherIcon, weatherLabel, titleLabel, outfitView, buttonStackView, emptyOutfitMessageLabel].forEach {
             view.addSubview($0)
         }
-
-        scrollView.addSubview(outfitView)
         
-        [outerImageView, topImageView, bottomImageView, shoesImageView].forEach {
+        // outfitView에 이미지뷰들 추가
+        [topImageView, bottomImageView, shoesImageView, outerImageView].forEach {
             outfitView.addSubview($0)
         }
         
+        // 버튼 스택뷰에 버튼들 추가
         [seeAnotherButton, styleButton].forEach {
             buttonStackView.addArrangedSubview($0)
         }
         
-//         Set temporary images for testing
-        // topImageView.image = UIImage(named: "jacket")
-        // bottomImageView.image = UIImage(named: "pants")
-        // shoesImageView.image = UIImage(named: "shoes")
-        
-        // In setupViews, add the emptyOutfitMessageLabel to the view
-        view.addSubview(emptyOutfitMessageLabel)
-        
-        // Update setupViews to add scrollView and contentView
-        view.addSubview(scrollView)
-        scrollView.addSubview(outfitView)
-        
-        // Move outfitView to contentView
-        // contentView.addSubview(outfitView)
-        
-        // Temporarily set the background color of contentView to red
-        // contentView.backgroundColor = .red
+        print("DEBUG - setupViews completed")
     }
     
     override func setupConstraints() {
@@ -199,38 +175,42 @@ class TodayViewController: BaseViewController {
             $0.leading.equalToSuperview().offset(20)
         }
         
-        scrollView.snp.remakeConstraints {
-            $0.top.equalTo(titleLabel.snp.bottom).offset(20)
-            $0.leading.trailing.equalToSuperview().inset(20)
-            $0.bottom.equalTo(buttonStackView.snp.top).offset(-20)
+       
+        
+        // 격자형 레이아웃: 상의(왼쪽 위), 하의(오른쪽 위), 신발(왼쪽 아래), 외투(오른쪽 아래)
+        let itemSize = (UIScreen.main.bounds.width - 60) / 2 // 화면 너비에서 여백 빼고 2로 나눔
+        
+        // outfitView 제약조건 변경
+        outfitView.snp.makeConstraints {
+            $0.centerY.equalToSuperview()
+            $0.width.height.equalTo(UIScreen.main.bounds.width - 30)
         }
         
-        outfitView.snp.remakeConstraints {
-            $0.edges.equalToSuperview()
-            $0.width.equalToSuperview() // Match width to enable vertical scrolling
-        }
-        
+        // 상의 (왼쪽 위)
         topImageView.snp.makeConstraints {
-            $0.top.leading.trailing.equalToSuperview()
-            $0.height.equalTo(boxSize)
+            $0.top.leading.equalToSuperview().inset(8)
+            $0.width.height.equalTo(itemSize)
         }
         
+        // 하의 (오른쪽 위)
+        bottomImageView.snp.makeConstraints {
+            $0.top.equalToSuperview().inset(8)
+            $0.trailing.equalToSuperview().inset(8)
+            $0.width.height.equalTo(itemSize)
+        }
+        
+        // 신발 (왼쪽 아래)
+        shoesImageView.snp.makeConstraints {
+            $0.bottom.equalToSuperview().inset(8)
+            $0.leading.equalToSuperview().inset(8)
+            $0.width.height.equalTo(itemSize)
+        }
+        
+        // 외투 (오른쪽 아래)
         outerImageView.snp.makeConstraints {
-            $0.top.equalTo(topImageView.snp.bottom).offset(spacing)
-            $0.leading.trailing.equalToSuperview()
-            $0.height.equalTo(boxSize)
-        }
-        
-        bottomImageView.snp.remakeConstraints {
-            $0.top.equalTo(outerImageView.snp.bottom).offset(spacing)
-            $0.leading.trailing.equalToSuperview()
-            $0.height.equalTo(boxSize)
-        }
-        
-        shoesImageView.snp.remakeConstraints {
-            $0.top.equalTo(bottomImageView.snp.bottom).offset(spacing)
-            $0.leading.trailing.equalToSuperview()
-            $0.height.equalTo(boxSize)
+            $0.bottom.equalToSuperview().inset(8)
+            $0.trailing.equalToSuperview().inset(8)
+            $0.width.height.equalTo(itemSize)
         }
         
         buttonStackView.snp.makeConstraints {
@@ -241,20 +221,8 @@ class TodayViewController: BaseViewController {
         
         // In setupConstraints, set constraints for emptyOutfitMessageLabel
         emptyOutfitMessageLabel.snp.makeConstraints {
-            $0.center.equalToSuperview()
+            $0.center.equalTo(outfitView)
             $0.leading.trailing.equalToSuperview().inset(20)
-        }
-        
-        // Update setupConstraints for scrollView and contentView
-        scrollView.snp.remakeConstraints {
-            $0.top.equalTo(titleLabel.snp.bottom).offset(20)
-            $0.leading.trailing.equalToSuperview().inset(20)
-            $0.bottom.equalTo(buttonStackView.snp.top).offset(-20)
-        }
-        
-        outfitView.snp.remakeConstraints {
-            $0.edges.equalToSuperview()
-            $0.width.equalToSuperview() // Match width to enable vertical scrolling
         }
     }
     
@@ -306,9 +274,10 @@ class TodayViewController: BaseViewController {
     }
     
     private func updateOutfit(_ outfit: Outfit?) {
-        // print("updateOutfit called with outfit: \(outfit)")
+        print("DEBUG - updateOutfit called with outfit: \(outfit != nil ? "있음" : "없음")")
         guard let outfit = outfit else {
             // Handle case where outfit is nil
+            print("DEBUG - Outfit is nil, clearing images")
             topImageView.image = nil
             bottomImageView.image = nil
             shoesImageView.image = nil
@@ -316,21 +285,42 @@ class TodayViewController: BaseViewController {
             return
         }
         
-        // Update images for top, bottom, and shoes
-        topImageView.image = ImageStorageService.shared.loadImage(withName: outfit.top?.id ?? "")
-        topImageView.layer.cornerRadius = 18
-        bottomImageView.image = ImageStorageService.shared.loadImage(withName: outfit.bottom?.id ?? "")
-        bottomImageView.layer.cornerRadius = 18
-        shoesImageView.image = ImageStorageService.shared.loadImage(withName: outfit.shoes?.id ?? "")
-        shoesImageView.layer.cornerRadius = 18
+        // 실제 이미지 로드
+        // 상의
+        let topImage = ImageStorageService.shared.loadImage(withName: outfit.top?.id ?? "")
+        print("DEBUG - Top ID: \(outfit.top?.id ?? "없음"), Image loaded: \(topImage != nil ? "성공" : "실패")")
+        topImageView.image = topImage ?? UIImage(systemName: "tshirt")
+        topImageView.tintColor = topImage == nil ? .black : .clear
+        topImageView.contentMode = .scaleAspectFill
+        topImageView.isHidden = false
         
-        // Update image for outer if available
+        // 하의
+        let bottomImage = ImageStorageService.shared.loadImage(withName: outfit.bottom?.id ?? "")
+        print("DEBUG - Bottom ID: \(outfit.bottom?.id ?? "없음"), Image loaded: \(bottomImage != nil ? "성공" : "실패")")
+        bottomImageView.image = bottomImage ?? UIImage(systemName: "arrow.down")
+        bottomImageView.tintColor = bottomImage == nil ? .black : .clear
+        bottomImageView.contentMode = .scaleAspectFill
+        bottomImageView.isHidden = false
+        
+        // 신발
+        let shoesImage = ImageStorageService.shared.loadImage(withName: outfit.shoes?.id ?? "")
+        print("DEBUG - Shoes ID: \(outfit.shoes?.id ?? "없음"), Image loaded: \(shoesImage != nil ? "성공" : "실패")")
+        shoesImageView.image = shoesImage ?? UIImage(systemName: "bag")
+        shoesImageView.tintColor = shoesImage == nil ? .black : .clear
+        shoesImageView.contentMode = .scaleAspectFill
+        shoesImageView.isHidden = false
+        
+        // 외투 (있는 경우에만)
         if let outer = outfit.outer {
-            outerImageView.image = ImageStorageService.shared.loadImage(withName: outer.id)
+            let outerImage = ImageStorageService.shared.loadImage(withName: outer.id)
+            print("DEBUG - Outer ID: \(outer.id), Image loaded: \(outerImage != nil ? "성공" : "실패")")
+            outerImageView.image = outerImage ?? UIImage(systemName: "star")
+            outerImageView.tintColor = outerImage == nil ? .black : .clear
+            outerImageView.contentMode = .scaleAspectFill
             outerImageView.isHidden = false
         } else {
-            outerImageView.removeFromSuperview()
-//            outerImageView.isHidden = true
+            print("DEBUG - No outer available")
+            outerImageView.isHidden = true
         }
     }
     
