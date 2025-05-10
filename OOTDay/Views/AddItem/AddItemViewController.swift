@@ -7,6 +7,8 @@ import RealmSwift
 
 class AddItemViewController: BaseViewController {
     
+    let styleObject = StyleObject()
+    
     // MARK: - UI Components
     private let titleLabel = UILabel().then {
         $0.text = "Add Item"
@@ -15,7 +17,13 @@ class AddItemViewController: BaseViewController {
     }
     
     private let photoContainerView = UIView().then {
-        $0.backgroundColor = .clear
+        $0.backgroundColor = .white
+        $0.layer.cornerRadius = 16
+    }
+    
+    private let imageView = UIImageView().then {
+        $0.contentMode = .scaleAspectFit
+        $0.isHidden = true
     }
     
     private lazy var dashedBorderLayer: CAShapeLayer = {
@@ -27,11 +35,6 @@ class AddItemViewController: BaseViewController {
         shapeLayer.path = UIBezierPath(roundedRect: CGRect(x: 0, y: 0, width: 100, height: 100), cornerRadius: 16).cgPath
         return shapeLayer
     }()
-    
-    private let photoImageView = UIImageView().then {
-        $0.contentMode = .scaleAspectFit
-        $0.isHidden = true
-    }
     
     private let photoPlaceholderStack = UIStackView().then {
         $0.axis = .vertical
@@ -177,6 +180,8 @@ class AddItemViewController: BaseViewController {
     
     private var selectedSeasons: Set<String> = []
     private var selectedStyles: Set<String> = []
+    private var selectedColors: [String] = []
+    private var selectedImage: UIImage?
     
     // Update styles array to use Korean names
     private let styles = ["캐주얼", "포멀", "스포티", "빈티지", "보헤미안", "시크", "프레피", "펑크"]
@@ -192,9 +197,38 @@ class AddItemViewController: BaseViewController {
         categoryButton.setTitle("Select", for: .normal)
         
         if let item = clothingItem {
-            // Initialize fields with the item's properties
-            // Example: categoryButton.setTitle(item.category, for: .normal)
-            // Initialize other fields like colors, style, and seasons
+            print(item)
+            // 기존 데이터로 UI 초기화
+            selectedCategory = item.category
+            categoryButton.setTitle(item.category, for: .normal)
+            
+            if let image = ImageStorageService.shared.loadImage(withName: item.id) {
+                
+                selectedImage = image
+                imageView.image = image
+                imageView.isHidden = false
+                photoPlaceholderStack.isHidden = true
+            }
+            
+            // 색상 초기화
+            selectedColors = Array(item.colors)
+            if let firstColor = selectedColors.first {
+                colorPickerButton.backgroundColor = UIColor(hex: firstColor)
+            }
+            
+            // 스타일 버튼 초기화
+            for style in item.stylesEnum {
+                if let index = styles.firstIndex(of: styleObject.changeStyleName(style: style)) {
+                    toggleStyleButton(styleButtons[index])
+                }
+            }
+            
+            // 시즌 버튼 초기화
+            for season in item.seasonsEnum {
+                if let index = ["Spring", "Summer", "Fall", "Winter"].firstIndex(of: season.rawValue) {
+                    toggleSeasonButton(at: index)
+                }
+            }
         }
         
         // Add tap gesture to dismiss keyboard
@@ -237,7 +271,7 @@ class AddItemViewController: BaseViewController {
         }
         
         photoContainerView.addSubview(photoPlaceholderStack)
-        photoContainerView.addSubview(photoImageView)
+        photoContainerView.addSubview(imageView)
         
         [cameraIcon, photoLabel].forEach {
             photoPlaceholderStack.addArrangedSubview($0)
@@ -272,7 +306,7 @@ class AddItemViewController: BaseViewController {
             $0.center.equalToSuperview()
         }
         
-        photoImageView.snp.makeConstraints {
+        imageView.snp.makeConstraints {
             $0.edges.equalToSuperview().inset(16)
         }
         
@@ -465,56 +499,55 @@ class AddItemViewController: BaseViewController {
         present(alert, animated: true)
     }
 
-    private func saveChanges() {
-        print(#function, #line)
-        guard let image = photoImageView.image,
+    @objc private func saveChanges() {
+        guard let image = selectedImage,
               let categoryTitle = selectedCategory,
-              let category = Category(rawValue: categoryTitle),
-              !selectedStyles.isEmpty,
-              !selectedSeasons.isEmpty else {
+              let category = Category(rawValue: categoryTitle) else {
             print("Missing required fields")
-            print("Image: \(photoImageView.image != nil)")
-            print("Category: \(Category(rawValue: selectedCategory ?? ""))")
-            print("Styles: \(selectedStyles)")
-            print("Seasons: \(selectedSeasons)")
             return
         }
         
-        // 시즌 변환 디버그
-        print("DEBUG - SEASONS CONVERSION START")
-        print("DEBUG - Selected seasons: \(selectedSeasons)")
-        var debugSeasons: [Season] = []
-        for seasonStr in selectedSeasons {
-            if let season = Season(rawValue: seasonStr) {
-                debugSeasons.append(season)
-                print("DEBUG - Converted \(seasonStr) to \(season) with rawValue \(season.rawValue)")
-            } else {
-                print("DEBUG - Failed to convert \(seasonStr) to Season enum")
+        // Convert selected styles to Style enum
+        let styles = selectedStyles.compactMap { styleTitle -> Style? in
+            switch styleTitle {
+            case "캐주얼": return .casual
+            case "포멀": return .formal
+            case "스포티": return .sporty
+            case "빈티지": return .vintage
+            case "보헤미안": return .bohemian
+            case "시크": return .chic
+            case "프레피": return .preppy
+            case "펑크": return .punk
+            default: return nil
             }
         }
         
-        let styles = selectedStyles.compactMap { viewModel.changeStyleEnum(style: $0) }
-        let colors = viewModel.parseColors(colorPickerButton.title(for: .normal) ?? "")
+        // Convert selected seasons to Season enum
         let seasons = selectedSeasons.compactMap { Season(rawValue: $0) }
         
         print("DEBUG - Selected seasons: \(selectedSeasons)")
-        print("DEBUG - Converted seasons: \(seasons)")
-        print("DEBUG - Seasons raw values: \(seasons.map { $0.rawValue })")
+        print("DEBUG - Converted seasons: \(seasons.map { $0.rawValue })")
+        print("DEBUG - All possible Season enum values: \(Season.allCases.map { $0.rawValue })")
         
-        // 모든 시즌 enum 출력
-        print("DEBUG - All Season enum values:")
-        for season in Season.allCases {
-            print("DEBUG - Season.\(season) = \(season.rawValue)")
+        if let existingItem = clothingItem {
+            // Update existing item
+            viewModel.updateItem(existingItem, image: image, category: category, colors: selectedColors, styles: styles, seasons: seasons)
+                .subscribe(onCompleted: { [weak self] in
+                    self?.dismiss(animated: true)
+                }, onError: { error in
+                    print("Error updating item: \(error)")
+                })
+                .disposed(by: disposeBag)
+        } else {
+            // Create new item
+            viewModel.saveItem(image: image, category: category, colors: selectedColors, styles: styles, seasons: seasons)
+                .subscribe(onCompleted: { [weak self] in
+                    self?.dismiss(animated: true)
+                }, onError: { error in
+                    print("Error saving item: \(error)")
+                })
+                .disposed(by: disposeBag)
         }
-
-        viewModel.saveItem(image: image, category: category, colors: colors, styles: styles, seasons: seasons)
-            .subscribe(onCompleted: {
-                print("Item saved successfully")
-                self.dismiss(animated: true)
-            }, onError: { error in
-                print("Error saving item: \(error)")
-            })
-            .disposed(by: disposeBag)
     }
     
     @objc private func dismissKeyboard() {
@@ -532,9 +565,10 @@ class AddItemViewController: BaseViewController {
 extension AddItemViewController: UIImagePickerControllerDelegate, UINavigationControllerDelegate {
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
         if let image = info[.originalImage] as? UIImage {
-            photoImageView.image = image
-            photoImageView.isHidden = false
+            imageView.image = image
+            imageView.isHidden = false
             photoPlaceholderStack.isHidden = true
+            selectedImage = image
         }
         picker.dismiss(animated: true)
     }

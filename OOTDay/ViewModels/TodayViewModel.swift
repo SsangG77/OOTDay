@@ -23,6 +23,8 @@ class TodayViewModel {
     // Add a message relay to communicate messages to the view controller
     let messageRelay = BehaviorRelay<String?>(value: nil)
     
+    private let weatherManager = WeatherManager()
+    
     init() {
         currentOutfit = outfitRelay.asDriver()
         
@@ -226,8 +228,7 @@ class TodayViewModel {
     
     // Helper methods to get current season and selected style
     private func getCurrentSeason() -> Season {
-        // Example logic to determine current season
-        return .spring
+        return weatherManager.getCurrentSeason()
     }
     
     private func toggleFavorite() {

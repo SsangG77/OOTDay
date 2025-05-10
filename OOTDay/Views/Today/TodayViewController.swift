@@ -326,24 +326,21 @@ class TodayViewController: BaseViewController {
     
     // Add showStyleActionSheet method
     private func showStyleActionSheet() {
-        let alert = UIAlertController(title: "Select Style", message: nil, preferredStyle: .actionSheet)
+        let alert = UIAlertController(title: "스타일 선택", message: nil, preferredStyle: .actionSheet)
         
-        styles.forEach { style in
+        for style in styles {
             let action = UIAlertAction(title: style, style: .default) { [weak self] _ in
                 self?.styleButton.setTitle(style, for: .normal)
-                self?.viewModel.updateSelectedStyle(Style(rawValue: style) ?? .casual)
+                // Update selected style in view model
+                if let styleEnum = Style(rawValue: style) {
+                    self?.viewModel.updateSelectedStyle(styleEnum)
+                }
             }
             alert.addAction(action)
         }
         
-        let cancelAction = UIAlertAction(title: "Cancel", style: .cancel)
+        let cancelAction = UIAlertAction(title: "취소", style: .cancel)
         alert.addAction(cancelAction)
-        
-        // iPad support
-        if let popoverController = alert.popoverPresentationController {
-            popoverController.sourceView = styleButton
-            popoverController.sourceRect = styleButton.bounds
-        }
         
         present(alert, animated: true)
     }
@@ -353,43 +350,30 @@ class TodayViewController: BaseViewController {
 #Preview {
     TodayViewController()
 }
-
-class WeatherManager: NSObject, CLLocationManagerDelegate {
-    private let weatherService = WeatherService()
-    private let locationManager = CLLocationManager()
-    private var currentLocation: CLLocation?
-
-    override init() {
-        super.init()
-        locationManager.delegate = self
-        locationManager.requestWhenInUseAuthorization()
-        locationManager.startUpdatingLocation()
-    }
-
-    func fetchWeather(completion: @escaping (Weather?) -> Void) {
-        guard let location = currentLocation else {
-            completion(nil)
-            return
-        }
-
-        Task {
-            do {
-                let weather = try await weatherService.weather(for: location)
-                completion(weather)
-            } catch {
-                print("Error fetching weather: \(error)")
-                completion(nil)
-            }
-        }
-    }
-
-    // CLLocationManagerDelegate
-    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        currentLocation = locations.last
-        locationManager.stopUpdatingLocation()
-    }
-
-    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        print("Failed to find user's location: \(error.localizedDescription)")
-    }
-}
+//class WeatherManager: NSObject, CLLocationManagerDelegate {
+//    private let locationManager = CLLocationManager()
+//    private var weatherCompletion: ((Weather?) -> Void)?
+//    
+//    override init() {
+//        super.init()
+//        locationManager.delegate = self
+//    }
+//    
+//    func fetchWeather(completion: @escaping (Weather?) -> Void) {
+//        weatherCompletion = completion
+//        locationManager.requestWhenInUseAuthorization()
+//        locationManager.requestLocation()
+//    }
+//    
+//    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+//        guard let location = locations.first else { return }
+//        // TODO: Implement weather fetching using WeatherKit
+//        weatherCompletion?(nil)
+//    }
+//    
+//    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+//        print("Location error: \(error)")
+//        weatherCompletion?(nil)
+//    }
+//}
+//

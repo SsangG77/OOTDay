@@ -73,14 +73,41 @@ class AddItemViewModel {
     }
     
     // MARK: - Validation
-    func validateInput(image: UIImage?, category: Category?, colors: [String], styles: [Style]?, seasons: [Season]) -> Bool {
-        guard image != nil else { return false }
-        guard category != nil else { return false }
-        guard !colors.isEmpty else { return false }
-        guard let styles = styles, !styles.isEmpty else { return false }
-        guard !seasons.isEmpty else { return false }
-        
-        return true
+    private func validateInputs(category: Category?, colors: [String], styles: [Style], seasons: [Season]) -> Bool {
+        return category != nil && !colors.isEmpty && !styles.isEmpty && !seasons.isEmpty
+    }
+    
+    // MARK: - Update Item
+    func updateItem(_ item: ClothingItem, image: UIImage?, category: Category, colors: [String], styles: [Style], seasons: [Season]) -> Completable {
+        return Completable.create { [weak self] completable in
+            guard let self = self else {
+                completable(.error(NSError(domain: "", code: -1)))
+                return Disposables.create()
+            }
+            
+            do {
+                // 이미지가 변경된 경우에만 이미지 저장
+                if let image = image {
+                    try self.imageStorage.saveImage(image, withName: item.id)
+                }
+                
+                try self.realm.write {
+                    item.category = category.rawValue
+                    item.colors.removeAll()
+                    item.colors.append(objectsIn: colors)
+                    item.styles.removeAll()
+                    item.styles.append(objectsIn: styles.map { $0.rawValue })
+                    item.seasons.removeAll()
+                    item.seasons.append(objectsIn: seasons.map { $0.rawValue })
+                }
+                
+                completable(.completed)
+            } catch {
+                completable(.error(error))
+            }
+            
+            return Disposables.create()
+        }
     }
     
     // MARK: - Helpers

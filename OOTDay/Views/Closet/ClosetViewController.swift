@@ -218,6 +218,15 @@ extension ClosetViewController: UICollectionViewDelegateFlowLayout {
         let width = (collectionView.bounds.width - 52) / 2 // 52 = left(20) + right(20) + spacing(12)
         return CGSize(width: width, height: width * 1.2) // 높이를 너비의 1.2배로 설정
     }
+    
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        let item = viewModel.itemsRelay.value[indexPath.row]
+        let addItemVC = AddItemViewController()
+        addItemVC.clothingItem = item
+        let nav = UINavigationController(rootViewController: addItemVC)
+        nav.modalPresentationStyle = .fullScreen
+        present(nav, animated: true)
+    }
 }
 
 // MARK: - ClothingItemCell

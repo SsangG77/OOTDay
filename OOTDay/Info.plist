@@ -2,6 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CFBundleIdentifier</key>
+	<string></string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
@@ -24,6 +26,6 @@
 	<key>NSCameraUsageDescription</key>
 	<string>This app needs access to your camera to take photos of clothing items.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>This app needs access to your location to provide weather updates.</string>
+	<string>날씨 정보를 가져오기 위해 위치 권한이 필요합니다.</string>
 </dict>
 </plist>
