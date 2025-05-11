@@ -448,12 +448,12 @@ class AddItemViewController: BaseViewController {
             button.backgroundColor = .black
             button.setTitleColor(.white, for: .normal)
             selectedSeasons.insert(season)
-            print("DEBUG - Toggle season ON: \(season), Season enum: \(Season(rawValue: season)?.rawValue ?? "nil")")
+            
         } else {
             button.backgroundColor = .white
             button.setTitleColor(.black, for: .normal)
             selectedSeasons.remove(season)
-            print("DEBUG - Toggle season OFF: \(season)")
+            
         }
     }
     
@@ -525,9 +525,6 @@ class AddItemViewController: BaseViewController {
         // Convert selected seasons to Season enum
         let seasons = selectedSeasons.compactMap { Season(rawValue: $0) }
         
-        print("DEBUG - Selected seasons: \(selectedSeasons)")
-        print("DEBUG - Converted seasons: \(seasons.map { $0.rawValue })")
-        print("DEBUG - All possible Season enum values: \(Season.allCases.map { $0.rawValue })")
         
         if let existingItem = clothingItem {
             // Update existing item

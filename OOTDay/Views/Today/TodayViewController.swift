@@ -36,25 +36,47 @@ class TodayViewController: BaseViewController {
         $0.textColor = .black
     }
     
-     private let outfitView = UIView()
+    private let outfitView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .white
+        view.layer.cornerRadius = 20
+        view.layer.shadowColor = UIColor.black.cgColor
+        view.layer.shadowOffset = CGSize(width: 0, height: 2)
+        view.layer.shadowRadius = 4
+        view.layer.shadowOpacity = 0.1
+        return view
+    }()
+    
+    private let favoriteButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setImage(UIImage(systemName: "star"), for: .normal)
+        button.tintColor = .systemYellow
+        button.backgroundColor = .white
+        button.layer.cornerRadius = 20
+        button.layer.shadowColor = UIColor.black.cgColor
+        button.layer.shadowOffset = CGSize(width: 0, height: 2)
+        button.layer.shadowRadius = 4
+        button.layer.shadowOpacity = 0.1
+        return button
+    }()
     
     private let topImageView = UIImageView().then {
         $0.contentMode = .scaleAspectFill
-        $0.backgroundColor = .systemGray.withAlphaComponent(0.3)
+        // $0.backgroundColor = .systemGray.withAlphaComponent(0.3)
         $0.clipsToBounds = true
         $0.layer.cornerRadius = 12
     }
     
     private let bottomImageView = UIImageView().then {
         $0.contentMode = .scaleAspectFill
-        $0.backgroundColor = .systemGray.withAlphaComponent(0.3)
+        // $0.backgroundColor = .systemGray.withAlphaComponent(0.3)
         $0.clipsToBounds = true
         $0.layer.cornerRadius = 12
     }
     
     private let shoesImageView = UIImageView().then {
         $0.contentMode = .scaleAspectFill
-        $0.backgroundColor = .systemGray.withAlphaComponent(0.3)
+        // $0.backgroundColor = .systemGray.withAlphaComponent(0.3)
         $0.clipsToBounds = true
         $0.layer.cornerRadius = 12
     }
@@ -118,15 +140,15 @@ class TodayViewController: BaseViewController {
         // 기본 스타일을 캐주얼로 설정
         viewModel.updateSelectedStyle(.casual)
         
-        // Set the current date in the format 'Tue, Apr 23'
+
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "E, MMM d"
         dateLabel.text = dateFormatter.string(from: Date())
         
         // 디버깅: 모든 이미지뷰를 강제로 표시
-        topImageView.isHidden = false
-        bottomImageView.isHidden = false
-        shoesImageView.isHidden = false
+        // topImageView.isHidden = false
+        // bottomImageView.isHidden = false
+        // shoesImageView.isHidden = false
         
         print("DEBUG - viewDidLoad completed")
     }
@@ -150,7 +172,21 @@ class TodayViewController: BaseViewController {
             buttonStackView.addArrangedSubview($0)
         }
         
-        print("DEBUG - setupViews completed")
+        // outfitView 설정
+        view.addSubview(outfitView)
+        outfitView.snp.makeConstraints { make in
+            make.top.equalTo(weatherLabel.snp.bottom).offset(20)
+            make.leading.trailing.equalToSuperview().inset(20)
+            make.height.equalTo(400)
+        }
+        
+        // favoriteButton 설정
+        outfitView.addSubview(favoriteButton)
+        favoriteButton.snp.makeConstraints { make in
+            make.width.height.equalTo(40)
+            make.bottom.equalTo(buttonStackView.snp.top).offset(-10)
+            make.trailing.equalToSuperview().offset(-10)
+        }
     }
     
     override func setupConstraints() {
@@ -260,6 +296,8 @@ class TodayViewController: BaseViewController {
                 self?.showStyleActionSheet()
             })
             .disposed(by: disposeBag)
+        
+        favoriteButton.addTarget(self, action: #selector(favoriteButtonTapped), for: .touchUpInside)
     }
     
     // MARK: - Private Methods
@@ -267,8 +305,10 @@ class TodayViewController: BaseViewController {
         weatherManager.fetchWeather { [weak self] weather in
             guard let self = self, let weather = weather else { return }
             DispatchQueue.main.async {
-                print("weather temp : \(weather.currentWeather.temperature.value)")
-                self.weatherLabel.text = "\(weather.currentWeather.temperature.value)°"
+                let temperature = weather.currentWeather.temperature.value
+                let roundedTemp = round(temperature * 10) / 10  // 소수점 한 자리까지 반올림
+                print("weather temp : \(roundedTemp)")
+                self.weatherLabel.text = "\(roundedTemp)°"
             }
         }
     }
@@ -288,24 +328,22 @@ class TodayViewController: BaseViewController {
         // 실제 이미지 로드
         // 상의
         let topImage = ImageStorageService.shared.loadImage(withName: outfit.top?.id ?? "")
-        print("DEBUG - Top ID: \(outfit.top?.id ?? "없음"), Image loaded: \(topImage != nil ? "성공" : "실패")")
-        topImageView.image = topImage ?? UIImage(systemName: "tshirt")
+        // topImageView.image = topImage ?? UIImage(systemName: "tshirt")
         topImageView.tintColor = topImage == nil ? .black : .clear
         topImageView.contentMode = .scaleAspectFill
         topImageView.isHidden = false
         
         // 하의
         let bottomImage = ImageStorageService.shared.loadImage(withName: outfit.bottom?.id ?? "")
-        print("DEBUG - Bottom ID: \(outfit.bottom?.id ?? "없음"), Image loaded: \(bottomImage != nil ? "성공" : "실패")")
-        bottomImageView.image = bottomImage ?? UIImage(systemName: "arrow.down")
+        // bottomImageView.image = bottomImage ?? UIImage(systemName: "arrow.down")
         bottomImageView.tintColor = bottomImage == nil ? .black : .clear
         bottomImageView.contentMode = .scaleAspectFill
         bottomImageView.isHidden = false
         
         // 신발
         let shoesImage = ImageStorageService.shared.loadImage(withName: outfit.shoes?.id ?? "")
-        print("DEBUG - Shoes ID: \(outfit.shoes?.id ?? "없음"), Image loaded: \(shoesImage != nil ? "성공" : "실패")")
-        shoesImageView.image = shoesImage ?? UIImage(systemName: "bag")
+        
+        // shoesImageView.image = shoesImage ?? UIImage(systemName: "bag")
         shoesImageView.tintColor = shoesImage == nil ? .black : .clear
         shoesImageView.contentMode = .scaleAspectFill
         shoesImageView.isHidden = false
@@ -313,8 +351,8 @@ class TodayViewController: BaseViewController {
         // 외투 (있는 경우에만)
         if let outer = outfit.outer {
             let outerImage = ImageStorageService.shared.loadImage(withName: outer.id)
-            print("DEBUG - Outer ID: \(outer.id), Image loaded: \(outerImage != nil ? "성공" : "실패")")
-            outerImageView.image = outerImage ?? UIImage(systemName: "star")
+            
+            // outerImageView.image = outerImage ?? UIImage(systemName: "star")
             outerImageView.tintColor = outerImage == nil ? .black : .clear
             outerImageView.contentMode = .scaleAspectFill
             outerImageView.isHidden = false
@@ -344,36 +382,14 @@ class TodayViewController: BaseViewController {
         
         present(alert, animated: true)
     }
+    
+    @objc private func favoriteButtonTapped() {
+        // TODO: 즐겨찾기 기능 구현
+        print("즐겨찾기 버튼이 탭되었습니다.")
+    }
 } 
 
 
 #Preview {
     TodayViewController()
 }
-//class WeatherManager: NSObject, CLLocationManagerDelegate {
-//    private let locationManager = CLLocationManager()
-//    private var weatherCompletion: ((Weather?) -> Void)?
-//    
-//    override init() {
-//        super.init()
-//        locationManager.delegate = self
-//    }
-//    
-//    func fetchWeather(completion: @escaping (Weather?) -> Void) {
-//        weatherCompletion = completion
-//        locationManager.requestWhenInUseAuthorization()
-//        locationManager.requestLocation()
-//    }
-//    
-//    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-//        guard let location = locations.first else { return }
-//        // TODO: Implement weather fetching using WeatherKit
-//        weatherCompletion?(nil)
-//    }
-//    
-//    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-//        print("Location error: \(error)")
-//        weatherCompletion?(nil)
-//    }
-//}
-//

@@ -22,12 +22,11 @@ class PremiumViewController: BaseViewController {
     private lazy var features: [(icon: String, title: String, description: String)] = [
         ("wand.and.stars", "AI 기반 코디 추천", "인공지능이 당신의 스타일을 분석하여 최적의 코디를 추천해드립니다."),
         ("cloud.sun", "날씨 기반 추천", "오늘의 날씨에 맞는 완벽한 코디를 제안해드립니다."),
-        ("calendar", "주간 코디 플래너", "일주일 치 코디를 미리 계획하고 준비하세요."),
         ("star", "스타일 분석", "당신의 옷장을 분석하여 부족한 아이템을 추천해드립니다.")
     ]
     
     private let subscribeButton = UIButton(type: .system).then {
-        $0.setTitle("구독하기 (월 ₩1,000)", for: .normal)
+        $0.setTitle("구독하기 (월 ₩2,000)", for: .normal)
         $0.titleLabel?.font = .systemFont(ofSize: 18, weight: .semibold)
         $0.backgroundColor = .systemBlue
         $0.setTitleColor(.white, for: .normal)

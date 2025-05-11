@@ -215,7 +215,7 @@ class TodayViewModel {
         
         // Randomly select one outfit from the generated outfits
         if let randomOutfit = outfitsToChooseFrom.randomElement() {
-            print("코디 생성 완료: \(randomOutfit.top?.id ?? "없음") / \(randomOutfit.bottom?.id ?? "없음") / \(randomOutfit.shoes?.id ?? "없음")")
+            
             if colorMatchedOutfits.isEmpty {
                 print("색상 조합에 맞는 코디가 없어서 임의로 선택했습니다.")
             }

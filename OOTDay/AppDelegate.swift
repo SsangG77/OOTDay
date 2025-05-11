@@ -77,7 +77,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // 마이그레이션이 성공적으로 수행되었는지 확인
         do {
             let _ = try Realm()
-            print("Realm 마이그레이션 완료 - 스키마 버전: 4")
         } catch let error {
             print("Realm 마이그레이션 실패: \(error.localizedDescription)")
         }
