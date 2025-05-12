@@ -24,6 +24,7 @@ class TodayViewModel {
     let messageRelay = BehaviorRelay<String?>(value: nil)
     
     private let weatherManager = WeatherManager()
+    private let styleObject = StyleObject()
     
     init() {
         currentOutfit = outfitRelay.asDriver()
@@ -146,8 +147,22 @@ class TodayViewModel {
 
         // Update messageRelay with appropriate messages
         if tops.isEmpty || bottoms.isEmpty || shoes.isEmpty {
-            let styleMsg = selectedStyle.rawValue
-            messageRelay.accept("\(styleMsg) 스타일에 맞는 옷이 부족해요!")
+            let styleMsg = styleObject.changeStyleName(style: selectedStyle)
+            var clothesMsgs:[String] = []
+            if tops.isEmpty {
+                clothesMsgs.append("상의")
+            }
+            if bottoms.isEmpty {
+                clothesMsgs.append("하의")
+            }
+            if shoes.isEmpty {
+                clothesMsgs.append("신발")
+            }
+
+            var clothesMsg = clothesMsgs.joined(separator: ",")
+
+            
+            messageRelay.accept("\(styleMsg) 스타일에 맞는 옷(\(clothesMsg))이 부족해요!")
             outfitRelay.accept(nil)
             return
         }

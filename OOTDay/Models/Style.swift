@@ -35,4 +35,29 @@ class StyleObject {
                 return "펑크"
         }
     }
+
+
+    func nameToStyle(name: String) -> Style {
+        switch name {
+            case "캐주얼":
+                return .casual
+            case "포멀":
+                return .formal
+            case "스포티":
+                return .sporty
+            case "빈티지":
+                return .vintage
+            case "보헤미안":
+                return .bohemian
+            case "시크":
+                return .chic
+            case "프리피":
+                return .preppy
+            case "펑크":
+                return .punk
+        default:
+            return .casual
+        }
+    }
+
 }
