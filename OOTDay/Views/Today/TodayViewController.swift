@@ -193,7 +193,7 @@ class TodayViewController: BaseViewController {
         super.setupViews()
         
         // 메인 뷰에 추가되는 뷰들
-        [dateLabel, weatherIcon, weatherLabel, titleLabel, outfitView, buttonStackView, emptyOutfitMessageLabel].forEach {
+        [dateLabel, weatherIcon, weatherLabel, titleLabel, outfitView, favoriteButton, buttonStackView, emptyOutfitMessageLabel].forEach {
             view.addSubview($0)
         }
         
@@ -288,7 +288,14 @@ class TodayViewController: BaseViewController {
             $0.centerX.equalTo(outerImageView)
         }
         
+        favoriteButton.snp.makeConstraints {
+            $0.top.equalTo(outfitView.snp.bottom).offset(16)
+            $0.trailing.equalTo(outfitView)
+            $0.width.height.equalTo(44)
+        }
+        
         buttonStackView.snp.makeConstraints {
+            $0.top.equalTo(favoriteButton.snp.bottom).offset(16)
             $0.leading.trailing.equalToSuperview().inset(20)
             $0.bottom.equalTo(view.safeAreaLayoutGuide).offset(-20)
             $0.height.equalTo(60)
