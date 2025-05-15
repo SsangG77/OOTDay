@@ -247,9 +247,17 @@ class TodayViewModel {
     }
     
     private func toggleFavorite() {
-        guard let outfit = outfitRelay.value else { return }
-        outfit.isFavorite.toggle()
-        // TODO: Save to Realm
+        guard let currentOutfit = outfitRelay.value else { return }
+        
+        do {
+            try realm.write {
+                currentOutfit.isFavorite.toggle()
+            }
+            // 현재 아웃핏 업데이트
+            outfitRelay.accept(currentOutfit)
+        } catch {
+            print("Error toggling favorite: \(error)")
+        }
     }
     
     private func getSelectedStyle() -> Style {

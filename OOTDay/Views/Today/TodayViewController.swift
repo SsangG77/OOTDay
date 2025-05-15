@@ -51,7 +51,7 @@ class TodayViewController: BaseViewController {
         button.setImage(UIImage(systemName: "star"), for: .normal)
         button.tintColor = .systemYellow
         button.backgroundColor = .white
-        button.layer.cornerRadius = 10
+        button.layer.cornerRadius = 20
         button.layer.shadowColor = UIColor.black.cgColor
         button.layer.shadowOffset = CGSize(width: 0, height: 2)
         button.layer.shadowRadius = 4
@@ -127,15 +127,13 @@ class TodayViewController: BaseViewController {
     private let buttonStackView = UIStackView().then {
         $0.axis = .horizontal
         $0.spacing = 12
-        $0.distribution = .fillEqually
+        $0.distribution = .fill
     }
     
     private let seeAnotherButton = UIButton(type: .system).then {
-        $0.setTitle("See Another\nOutfit", for: .normal)
-        $0.titleLabel?.numberOfLines = 2
-        $0.titleLabel?.textAlignment = .center
-        $0.titleLabel?.font = .systemFont(ofSize: 18, weight: .semibold)
-        $0.setTitleColor(.white, for: .normal)
+        let config = UIImage.SymbolConfiguration(pointSize: 24, weight: .medium)
+        $0.setImage(UIImage(systemName: "arrow.clockwise", withConfiguration: config), for: .normal)
+        $0.tintColor = .white
         $0.backgroundColor = UIColor(white: 0.2, alpha: 1.0)
         $0.layer.cornerRadius = 20
     }
@@ -193,7 +191,7 @@ class TodayViewController: BaseViewController {
         super.setupViews()
         
         // 메인 뷰에 추가되는 뷰들
-        [dateLabel, weatherIcon, weatherLabel, titleLabel, outfitView, favoriteButton, buttonStackView, emptyOutfitMessageLabel].forEach {
+        [dateLabel, weatherIcon, weatherLabel, titleLabel, outfitView, buttonStackView, emptyOutfitMessageLabel].forEach {
             view.addSubview($0)
         }
         
@@ -204,7 +202,7 @@ class TodayViewController: BaseViewController {
         }
         
         // 버튼 스택뷰에 버튼들 추가
-        [seeAnotherButton, styleButton].forEach {
+        [styleButton, favoriteButton, seeAnotherButton].forEach {
             buttonStackView.addArrangedSubview($0)
         }
     }
@@ -237,7 +235,7 @@ class TodayViewController: BaseViewController {
         // outfitView 제약조건 변경
         outfitView.snp.makeConstraints {
             $0.centerY.equalToSuperview()
-            $0.height.equalTo(UIScreen.main.bounds.width - 30 + 30)
+            $0.height.equalTo(UIScreen.main.bounds.width - 30)
             $0.width.equalTo(UIScreen.main.bounds.width - 30)
         }
         
@@ -288,17 +286,26 @@ class TodayViewController: BaseViewController {
             $0.centerX.equalTo(outerImageView)
         }
         
-        favoriteButton.snp.makeConstraints {
-            $0.top.equalTo(outfitView.snp.bottom).offset(16)
-            $0.trailing.equalTo(outfitView)
-            $0.width.height.equalTo(44)
-        }
-        
         buttonStackView.snp.makeConstraints {
-            $0.top.equalTo(favoriteButton.snp.bottom).offset(16)
+            $0.top.equalTo(outfitView.snp.bottom).offset(16)
             $0.leading.trailing.equalToSuperview().inset(20)
             $0.bottom.equalTo(view.safeAreaLayoutGuide).offset(-20)
             $0.height.equalTo(60)
+        }
+        
+        // 각 버튼의 크기 비율 설정 (간격 12포인트 고려)
+        let totalSpacing: CGFloat = 24 // 버튼 사이 간격 2개 (12 * 2)
+        
+        styleButton.snp.makeConstraints {
+            $0.width.equalTo(buttonStackView.snp.width).multipliedBy(0.5).offset(-totalSpacing * 0.5) // 전체 너비의 50%에서 간격의 절반만큼 빼기
+        }
+        
+        favoriteButton.snp.makeConstraints {
+            $0.width.equalTo(buttonStackView.snp.width).multipliedBy(0.25).offset(-totalSpacing * 0.25) // 전체 너비의 25%에서 간격의 1/4만큼 빼기
+        }
+        
+        seeAnotherButton.snp.makeConstraints {
+            $0.width.equalTo(buttonStackView.snp.width).multipliedBy(0.25).offset(-totalSpacing * 0.25) // 전체 너비의 25%에서 간격의 1/4만큼 빼기
         }
         
         // In setupConstraints, set constraints for emptyOutfitMessageLabel
@@ -368,8 +375,13 @@ class TodayViewController: BaseViewController {
             shoesImageView.image = nil
             outerImageView.isHidden = true
             outerLabel.isHidden = true
+            favoriteButton.setImage(UIImage(systemName: "star"), for: .normal)
             return
         }
+        
+        // 즐겨찾기 버튼 상태 업데이트
+        let starImage = outfit.isFavorite ? "star.fill" : "star"
+        favoriteButton.setImage(UIImage(systemName: starImage), for: .normal)
         
         // 실제 이미지 로드
         // 상의
@@ -434,8 +446,7 @@ class TodayViewController: BaseViewController {
     }
     
     @objc private func favoriteButtonTapped() {
-        // TODO: 즐겨찾기 기능 구현
-        print("즐겨찾기 버튼이 탭되었습니다.")
+        viewModel.favoriteTapped.accept(())
     }
 } 
 
