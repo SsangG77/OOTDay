@@ -81,23 +81,23 @@ class ClosetViewModel {
     
     // Add a method to get clothes for a specific season
     func getClothesForSeason(_ season: Season) -> [ClothingItem] {
-        print("Searching for season: \(season.rawValue)")
+
         let seasonRawValue = season.rawValue
         
         // 모든 아이템 출력
         let allItems = realm.objects(ClothingItem.self)
-        print("DEBUG - All items count: \(allItems.count)")
+
         
         // 임시 해결책 제거 - 자동으로 Spring 추가하지 않음
         
         // 시즌으로 필터링
         let items = realm.objects(ClothingItem.self).filter("ANY seasons == %@", seasonRawValue)
-        print("Found \(items.count) items with season \(seasonRawValue)")
+        
         
         // 디버깅을 위해 모든 아이템의 시즌 정보 출력
-        for item in allItems {
-            print("Item: \(item.id), Seasons: \(Array(item.seasons))")
-        }
+//        for item in allItems {
+//            print("Item: \(item.id), Seasons: \(Array(item.seasons))")
+//        }
         
         return Array(items)
     }

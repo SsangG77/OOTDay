@@ -21,9 +21,12 @@ class MainTabBarController: UITabBarController {
         let closetVC = UINavigationController(rootViewController: ClosetViewController())
         closetVC.tabBarItem = UITabBarItem(title: "내 옷장", image: UIImage(systemName: "tshirt"), tag: 1)
         
-        let premiumVC = UINavigationController(rootViewController: PremiumViewController())
-        premiumVC.tabBarItem = UITabBarItem(title: "프리미엄", image: UIImage(systemName: "star"), tag: 2)
+        let historyVC = UINavigationController(rootViewController: HistoryViewController())
+        historyVC.tabBarItem = UITabBarItem(title: "히스토리", image: UIImage(systemName: "clock"), tag: 2)
         
-        viewControllers = [todayVC, closetVC, premiumVC]
+        let premiumVC = UINavigationController(rootViewController: PremiumViewController())
+        premiumVC.tabBarItem = UITabBarItem(title: "프리미엄", image: UIImage(systemName: "star"), tag: 3)
+        
+        viewControllers = [todayVC, historyVC, closetVC, premiumVC]
     }
 } 

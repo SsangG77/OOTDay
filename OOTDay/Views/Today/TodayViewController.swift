@@ -209,7 +209,7 @@ class TodayViewController: BaseViewController {
     
     override func setupConstraints() {
         dateLabel.snp.makeConstraints {
-            $0.top.equalTo(view.safeAreaLayoutGuide).offset(20)
+            $0.top.equalTo(view.safeAreaLayoutGuide)
             $0.leading.equalToSuperview().offset(20)
         }
         
@@ -235,7 +235,7 @@ class TodayViewController: BaseViewController {
         // outfitView 제약조건 변경
         outfitView.snp.makeConstraints {
             $0.centerY.equalToSuperview()
-            $0.height.equalTo(UIScreen.main.bounds.width - 30)
+            $0.height.equalTo(UIScreen.main.bounds.width - 10)
             $0.width.equalTo(UIScreen.main.bounds.width - 30)
         }
         
@@ -287,7 +287,7 @@ class TodayViewController: BaseViewController {
         }
         
         buttonStackView.snp.makeConstraints {
-            $0.top.equalTo(outfitView.snp.bottom).offset(16)
+            // $0.top.equalTo(outfitView.snp.bottom).offset(16)
             $0.leading.trailing.equalToSuperview().inset(20)
             $0.bottom.equalTo(view.safeAreaLayoutGuide).offset(-20)
             $0.height.equalTo(60)
