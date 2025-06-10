@@ -73,7 +73,7 @@ class TodayViewModel {
         for item in allClothes {
             if item.seasons.isEmpty {
                 itemsWithoutSeasons += 1
-                print("DEBUG - ⚠️ 시즌이 없는 아이템: \(item.id), Category: \(item.category)")
+                print("DEBUG - 시즌이 없는 아이템: \(item.id), Category: \(item.category)")
             } else {
                 print("DEBUG - 아이템: \(item.id), Category: \(item.category), Seasons: \(Array(item.seasons))")
             }
