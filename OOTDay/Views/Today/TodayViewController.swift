@@ -6,17 +6,14 @@ import Then
 import WeatherKit
 import CoreLocation
 
-class TodayViewController: BaseViewController {
-    
-    let boxSize = 260
-    let spacing = 25
-//    let totalHeight: CGFloat = (160 * 4) + (20 * 3)
 
-    // MARK: - UI Components
+//MARK: - HeaderViewController
+class HeaderViewController: BaseViewController {
+ 
     private let dateLabel = UILabel().then {
         $0.font = .systemFont(ofSize: 24, weight: .bold)
         $0.textColor = .black
-        $0.text = "Tue, Apr23"
+//        $0.text = "Tue, Apr23"
     }
     
     private let weatherLabel = UILabel().then {
@@ -36,15 +33,71 @@ class TodayViewController: BaseViewController {
         $0.textColor = .black
     }
     
-    private let outfitView: UIView = {
-        let view = UIView()
-        view.layer.cornerRadius = 20
-        view.layer.shadowColor = UIColor.black.cgColor
-        view.layer.shadowOffset = CGSize(width: 0, height: 2)
-        view.layer.shadowRadius = 4
-        view.layer.shadowOpacity = 0.1
-        return view
-    }()
+    
+    private let weatherManager = WeatherManager()
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "E, MMM d"
+        dateLabel.text = dateFormatter.string(from: Date())
+        
+        
+        [dateLabel, weatherIcon, weatherLabel, titleLabel].forEach {
+            view.addSubview($0)
+        }
+        
+        dateLabel.snp.makeConstraints {
+            $0.top.equalTo(view.safeAreaLayoutGuide)
+            $0.leading.equalToSuperview().offset(20)
+        }
+        
+        weatherIcon.snp.makeConstraints {
+            $0.centerY.equalTo(dateLabel)
+            $0.trailing.equalTo(weatherLabel.snp.leading).offset(-4)
+            $0.width.height.equalTo(24)
+        }
+        
+        weatherLabel.snp.makeConstraints {
+            $0.centerY.equalTo(dateLabel)
+            $0.trailing.equalToSuperview().offset(-20)
+        }
+        
+        titleLabel.snp.makeConstraints {
+            $0.top.equalTo(dateLabel.snp.bottom).offset(8)
+            $0.leading.equalToSuperview().offset(20)
+        }
+        
+        updateWeatherInfo()
+        
+    }
+    
+    
+    // MARK: - Private Methods
+    private func updateWeatherInfo() {
+        weatherManager.fetchWeather { [weak self] weather in
+            guard let self = self, let weather = weather else { return }
+            DispatchQueue.main.async {
+                let temperature = weather.currentWeather.temperature.value
+                let roundedTemp = round(temperature * 10) / 10  // 소수점 한 자리까지 반올림
+                
+                self.weatherLabel.text = "\(roundedTemp)°"
+            }
+        }
+    }
+}
+
+
+class BottomButtonViewController: BaseViewController {
+    
+    private let viewModel = TodayViewModel()
+    
+    private let buttonStackView = UIStackView().then {
+        $0.axis = .horizontal
+        $0.spacing = 12
+        $0.distribution = .fill
+    }
     
     private let favoriteButton: UIButton = {
         let button = UIButton(type: .system)
@@ -58,6 +111,106 @@ class TodayViewController: BaseViewController {
         button.layer.shadowOpacity = 0.1
         return button
     }()
+    
+    private let seeAnotherButton = UIButton(type: .system).then {
+        let config = UIImage.SymbolConfiguration(pointSize: 24, weight: .medium)
+        $0.setImage(UIImage(systemName: "arrow.clockwise", withConfiguration: config), for: .normal)
+        $0.tintColor = .white
+        $0.backgroundColor = UIColor(white: 0.2, alpha: 1.0)
+        $0.layer.cornerRadius = 20
+    }
+    
+    private let styleButton = UIButton(type: .system).then {
+        $0.setTitle("캐주얼", for: .normal)
+        $0.titleLabel?.font = .systemFont(ofSize: 18, weight: .semibold)
+        $0.setTitleColor(.white, for: .normal)
+        $0.backgroundColor = UIColor(white: 0.2, alpha: 1.0)
+        $0.layer.cornerRadius = 20
+    }
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        
+        view.addSubview(buttonStackView)
+        
+        [styleButton, favoriteButton, seeAnotherButton].forEach {
+            buttonStackView.addArrangedSubview($0)
+        }
+        
+        buttonStackView.snp.makeConstraints {
+            $0.leading.trailing.equalToSuperview().inset(20)
+            $0.bottom.equalTo(view.safeAreaLayoutGuide).offset(-20)
+            $0.height.equalTo(60)
+        }
+        
+        // 각 버튼의 크기 비율 설정 (간격 12포인트 고려)
+        let totalSpacing: CGFloat = 24 // 버튼 사이 간격 2개 (12 * 2)
+        
+        styleButton.snp.makeConstraints {
+            $0.width.equalTo(buttonStackView.snp.width).multipliedBy(0.5).offset(-totalSpacing * 0.5) // 전체 너비의 50%에서 간격의 절반만큼 빼기
+        }
+        
+        favoriteButton.snp.makeConstraints {
+            $0.width.equalTo(buttonStackView.snp.width).multipliedBy(0.25).offset(-totalSpacing * 0.25) // 전체 너비의 25%에서 간격의 1/4만큼 빼기
+        }
+        
+        seeAnotherButton.snp.makeConstraints {
+            $0.width.equalTo(buttonStackView.snp.width).multipliedBy(0.25).offset(-totalSpacing * 0.25) // 전체 너비의 25%에서 간격의 1/4만큼 빼기
+        }
+        
+        
+        
+        seeAnotherButton.rx.tap
+            .bind(to: viewModel.seeAnotherTapped)
+            .disposed(by: disposeBag)
+        
+        styleButton.rx.tap
+            .subscribe(onNext: { [weak self] in
+                self?.showStyleActionSheet()
+            })
+            .disposed(by: disposeBag)
+        
+        favoriteButton.addTarget(self, action: #selector(favoriteButtonTapped), for: .touchUpInside)
+    }
+    
+    @objc private func favoriteButtonTapped() {
+        viewModel.favoriteTapped.accept(())
+    }
+    
+    
+}
+
+
+class TodayViewController: BaseViewController {
+    
+    let boxSize = 260
+    let spacing = 25
+    
+    
+    let headerView = HeaderViewController()
+    
+    private let outfitView: UIView = {
+        let view = UIView()
+        view.layer.cornerRadius = 20
+        view.layer.shadowColor = UIColor.black.cgColor
+        view.layer.shadowOffset = CGSize(width: 0, height: 2)
+        view.layer.shadowRadius = 4
+        view.layer.shadowOpacity = 0.1
+        return view
+    }()
+    
+//    private let favoriteButton: UIButton = {
+//        let button = UIButton(type: .system)
+//        button.setImage(UIImage(systemName: "star"), for: .normal)
+//        button.tintColor = .systemYellow
+//        button.backgroundColor = .white
+//        button.layer.cornerRadius = 20
+//        button.layer.shadowColor = UIColor.black.cgColor
+//        button.layer.shadowOffset = CGSize(width: 0, height: 2)
+//        button.layer.shadowRadius = 4
+//        button.layer.shadowOpacity = 0.1
+//        return button
+//    }()
     
     private let topImageView = UIImageView().then {
         $0.contentMode = .scaleAspectFill
@@ -123,22 +276,21 @@ class TodayViewController: BaseViewController {
         label.textColor = .darkGray
         return label
     }()
+
+//    private let buttonStackView = UIStackView().then {
+//        $0.axis = .horizontal
+//        $0.spacing = 12
+//        $0.distribution = .fill
+//    }
+//    
+//    private let seeAnotherButton = UIButton(type: .system).then {
+//        let config = UIImage.SymbolConfiguration(pointSize: 24, weight: .medium)
+//        $0.setImage(UIImage(systemName: "arrow.clockwise", withConfiguration: config), for: .normal)
+//        $0.tintColor = .white
+//        $0.backgroundColor = UIColor(white: 0.2, alpha: 1.0)
+//        $0.layer.cornerRadius = 20
+//    }
     
-    private let buttonStackView = UIStackView().then {
-        $0.axis = .horizontal
-        $0.spacing = 12
-        $0.distribution = .fill
-    }
-    
-    private let seeAnotherButton = UIButton(type: .system).then {
-        let config = UIImage.SymbolConfiguration(pointSize: 24, weight: .medium)
-        $0.setImage(UIImage(systemName: "arrow.clockwise", withConfiguration: config), for: .normal)
-        $0.tintColor = .white
-        $0.backgroundColor = UIColor(white: 0.2, alpha: 1.0)
-        $0.layer.cornerRadius = 20
-    }
-    
-    // Add a label to display when there are no outfits
     private let emptyOutfitMessageLabel = UILabel().then {
         $0.numberOfLines = 0
         $0.text = "옷장이 비어있어요!"
@@ -148,40 +300,33 @@ class TodayViewController: BaseViewController {
         $0.isHidden = true // Initially hidden
     }
     
-    // Add a style selection button
-    private let styleButton = UIButton(type: .system).then {
-        $0.setTitle("캐주얼", for: .normal)
-        $0.titleLabel?.font = .systemFont(ofSize: 18, weight: .semibold)
-        $0.setTitleColor(.white, for: .normal)
-        $0.backgroundColor = UIColor(white: 0.2, alpha: 1.0)
-        $0.layer.cornerRadius = 20
-    }
+    
+//    private let styleButton = UIButton(type: .system).then {
+//        $0.setTitle("캐주얼", for: .normal)
+//        $0.titleLabel?.font = .systemFont(ofSize: 18, weight: .semibold)
+//        $0.setTitleColor(.white, for: .normal)
+//        $0.backgroundColor = UIColor(white: 0.2, alpha: 1.0)
+//        $0.layer.cornerRadius = 20
+//    }
     
     // Add styles array for selection
     private let styles = ["캐주얼", "포멀", "스포티", "빈티지", "보헤미안", "시크", "프레피", "펑크"]
     
     // MARK: - Properties
     private let viewModel = TodayViewModel()
-    private let weatherManager = WeatherManager()
     
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = UIColor(red: 247/255, green: 143/255, blue: 67/255, alpha: 1)
-        updateWeatherInfo()
         
         // 기본 스타일을 캐주얼로 설정
         viewModel.updateSelectedStyle(.casual)
         
-
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "E, MMM d"
-        dateLabel.text = dateFormatter.string(from: Date())
-        
         // 디버깅: 모든 이미지뷰를 강제로 표시
-        topImageView.isHidden = false
-        bottomImageView.isHidden = false
-        shoesImageView.isHidden = false
+//        topImageView.isHidden = false
+//        bottomImageView.isHidden = false
+//        shoesImageView.isHidden = false
         
         print("DEBUG - viewDidLoad completed")
     }
@@ -191,7 +336,7 @@ class TodayViewController: BaseViewController {
         super.setupViews()
         
         // 메인 뷰에 추가되는 뷰들
-        [dateLabel, weatherIcon, weatherLabel, titleLabel, outfitView, buttonStackView, emptyOutfitMessageLabel].forEach {
+        [outfitView, emptyOutfitMessageLabel].forEach {
             view.addSubview($0)
         }
         
@@ -202,32 +347,11 @@ class TodayViewController: BaseViewController {
         }
         
         // 버튼 스택뷰에 버튼들 추가
-        [styleButton, favoriteButton, seeAnotherButton].forEach {
-            buttonStackView.addArrangedSubview($0)
-        }
+        
     }
     
     override func setupConstraints() {
-        dateLabel.snp.makeConstraints {
-            $0.top.equalTo(view.safeAreaLayoutGuide)
-            $0.leading.equalToSuperview().offset(20)
-        }
-        
-        weatherIcon.snp.makeConstraints {
-            $0.centerY.equalTo(dateLabel)
-            $0.trailing.equalTo(weatherLabel.snp.leading).offset(-4)
-            $0.width.height.equalTo(24)
-        }
-        
-        weatherLabel.snp.makeConstraints {
-            $0.centerY.equalTo(dateLabel)
-            $0.trailing.equalToSuperview().offset(-20)
-        }
-        
-        titleLabel.snp.makeConstraints {
-            $0.top.equalTo(dateLabel.snp.bottom).offset(8)
-            $0.leading.equalToSuperview().offset(20)
-        }
+       
         
         // 격자형 레이아웃: 상의(왼쪽 위), 하의(오른쪽 위), 신발(왼쪽 아래), 외투(오른쪽 아래)
         let itemSize = (UIScreen.main.bounds.width - 60) / 2 // 화면 너비에서 여백 빼고 2로 나눔
@@ -286,27 +410,26 @@ class TodayViewController: BaseViewController {
             $0.centerX.equalTo(outerImageView)
         }
         
-        buttonStackView.snp.makeConstraints {
-            // $0.top.equalTo(outfitView.snp.bottom).offset(16)
-            $0.leading.trailing.equalToSuperview().inset(20)
-            $0.bottom.equalTo(view.safeAreaLayoutGuide).offset(-20)
-            $0.height.equalTo(60)
-        }
-        
-        // 각 버튼의 크기 비율 설정 (간격 12포인트 고려)
-        let totalSpacing: CGFloat = 24 // 버튼 사이 간격 2개 (12 * 2)
-        
-        styleButton.snp.makeConstraints {
-            $0.width.equalTo(buttonStackView.snp.width).multipliedBy(0.5).offset(-totalSpacing * 0.5) // 전체 너비의 50%에서 간격의 절반만큼 빼기
-        }
-        
-        favoriteButton.snp.makeConstraints {
-            $0.width.equalTo(buttonStackView.snp.width).multipliedBy(0.25).offset(-totalSpacing * 0.25) // 전체 너비의 25%에서 간격의 1/4만큼 빼기
-        }
-        
-        seeAnotherButton.snp.makeConstraints {
-            $0.width.equalTo(buttonStackView.snp.width).multipliedBy(0.25).offset(-totalSpacing * 0.25) // 전체 너비의 25%에서 간격의 1/4만큼 빼기
-        }
+//        buttonStackView.snp.makeConstraints {
+//            $0.leading.trailing.equalToSuperview().inset(20)
+//            $0.bottom.equalTo(view.safeAreaLayoutGuide).offset(-20)
+//            $0.height.equalTo(60)
+//        }
+//        
+//        // 각 버튼의 크기 비율 설정 (간격 12포인트 고려)
+//        let totalSpacing: CGFloat = 24 // 버튼 사이 간격 2개 (12 * 2)
+//        
+//        styleButton.snp.makeConstraints {
+//            $0.width.equalTo(buttonStackView.snp.width).multipliedBy(0.5).offset(-totalSpacing * 0.5) // 전체 너비의 50%에서 간격의 절반만큼 빼기
+//        }
+//        
+//        favoriteButton.snp.makeConstraints {
+//            $0.width.equalTo(buttonStackView.snp.width).multipliedBy(0.25).offset(-totalSpacing * 0.25) // 전체 너비의 25%에서 간격의 1/4만큼 빼기
+//        }
+//        
+//        seeAnotherButton.snp.makeConstraints {
+//            $0.width.equalTo(buttonStackView.snp.width).multipliedBy(0.25).offset(-totalSpacing * 0.25) // 전체 너비의 25%에서 간격의 1/4만큼 빼기
+//        }
         
         // In setupConstraints, set constraints for emptyOutfitMessageLabel
         emptyOutfitMessageLabel.snp.makeConstraints {
@@ -316,9 +439,9 @@ class TodayViewController: BaseViewController {
     }
     
     override func setupBindings() {
-        seeAnotherButton.rx.tap
-            .bind(to: viewModel.seeAnotherTapped)
-            .disposed(by: disposeBag)
+//        seeAnotherButton.rx.tap
+//            .bind(to: viewModel.seeAnotherTapped)
+//            .disposed(by: disposeBag)
         
         viewModel.currentOutfit
             .drive(onNext: { [weak self] outfit in
@@ -344,27 +467,16 @@ class TodayViewController: BaseViewController {
             .disposed(by: disposeBag)
         
         // Update setupBindings to handle styleButton tap
-        styleButton.rx.tap
-            .subscribe(onNext: { [weak self] in
-                self?.showStyleActionSheet()
-            })
-            .disposed(by: disposeBag)
-        
-        favoriteButton.addTarget(self, action: #selector(favoriteButtonTapped), for: .touchUpInside)
+//        styleButton.rx.tap
+//            .subscribe(onNext: { [weak self] in
+//                self?.showStyleActionSheet()
+//            })
+//            .disposed(by: disposeBag)
+//        
+//        favoriteButton.addTarget(self, action: #selector(favoriteButtonTapped), for: .touchUpInside)
     }
     
-    // MARK: - Private Methods
-    private func updateWeatherInfo() {
-        weatherManager.fetchWeather { [weak self] weather in
-            guard let self = self, let weather = weather else { return }
-            DispatchQueue.main.async {
-                let temperature = weather.currentWeather.temperature.value
-                let roundedTemp = round(temperature * 10) / 10  // 소수점 한 자리까지 반올림
-                
-                self.weatherLabel.text = "\(roundedTemp)°"
-            }
-        }
-    }
+    
     
     private func updateOutfit(_ outfit: Outfit?) {
         print("DEBUG - updateOutfit called with outfit: \(outfit != nil ? "있음" : "없음")")
@@ -445,9 +557,9 @@ class TodayViewController: BaseViewController {
         present(alert, animated: true)
     }
     
-    @objc private func favoriteButtonTapped() {
-        viewModel.favoriteTapped.accept(())
-    }
+//    @objc private func favoriteButtonTapped() {
+//        viewModel.favoriteTapped.accept(())
+//    }
 } 
 
 
