@@ -8,7 +8,7 @@ import CoreLocation
 
 
 //MARK: - HeaderViewController
-class HeaderViewController: BaseViewController {
+class HeaderView: UIView {
  
     private let dateLabel = UILabel().then {
         $0.font = .systemFont(ofSize: 24, weight: .bold)
@@ -36,8 +36,8 @@ class HeaderViewController: BaseViewController {
     
     private let weatherManager = WeatherManager()
     
-    override func viewDidLoad() {
-        super.viewDidLoad()
+    required override init(frame: CGRect) {
+        super.init(frame: frame)
         
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "E, MMM d"
@@ -45,11 +45,11 @@ class HeaderViewController: BaseViewController {
         
         
         [dateLabel, weatherIcon, weatherLabel, titleLabel].forEach {
-            view.addSubview($0)
+            addSubview($0)
         }
         
         dateLabel.snp.makeConstraints {
-            $0.top.equalTo(view.safeAreaLayoutGuide)
+            $0.top.equalToSuperview()
             $0.leading.equalToSuperview().offset(20)
         }
         
@@ -73,6 +73,10 @@ class HeaderViewController: BaseViewController {
         
     }
     
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
     
     // MARK: - Private Methods
     private func updateWeatherInfo() {
@@ -88,10 +92,14 @@ class HeaderViewController: BaseViewController {
     }
 }
 
-
-class BottomButtonViewController: BaseViewController {
+//MARK: - BottomButtonViewController
+class BottomButtonView: UIView {
     
     private let viewModel = TodayViewModel()
+    
+    private let styles = ["캐주얼", "포멀", "스포티", "빈티지", "보헤미안", "시크", "프레피", "펑크"]
+    
+    let disposeBag = DisposeBag()
     
     private let buttonStackView = UIStackView().then {
         $0.axis = .horizontal
@@ -128,10 +136,11 @@ class BottomButtonViewController: BaseViewController {
         $0.layer.cornerRadius = 20
     }
     
-    override func viewDidLoad() {
-        super.viewDidLoad()
+    required override init(frame: CGRect) {
+        super.init(frame: frame)
         
-        view.addSubview(buttonStackView)
+        
+        addSubview(buttonStackView)
         
         [styleButton, favoriteButton, seeAnotherButton].forEach {
             buttonStackView.addArrangedSubview($0)
@@ -139,7 +148,7 @@ class BottomButtonViewController: BaseViewController {
         
         buttonStackView.snp.makeConstraints {
             $0.leading.trailing.equalToSuperview().inset(20)
-            $0.bottom.equalTo(view.safeAreaLayoutGuide).offset(-20)
+            $0.bottom.equalToSuperview().offset(-20)
             $0.height.equalTo(60)
         }
         
@@ -171,23 +180,49 @@ class BottomButtonViewController: BaseViewController {
             .disposed(by: disposeBag)
         
         favoriteButton.addTarget(self, action: #selector(favoriteButtonTapped), for: .touchUpInside)
+        
+        
+    }
+    
+    required init(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    
+    private func showStyleActionSheet() {
+        let alert = UIAlertController(title: "스타일 선택", message: nil, preferredStyle: .actionSheet)
+        
+        for style in styles {
+            let action = UIAlertAction(title: style, style: .default) { [weak self] _ in
+                self?.styleButton.setTitle(style, for: .normal)
+                // Update selected style in view model
+                if let styleEnum = Style(rawValue: style) {
+                    self?.viewModel.updateSelectedStyle(styleEnum)
+                }
+            }
+            alert.addAction(action)
+        }
+        
+        let cancelAction = UIAlertAction(title: "취소", style: .cancel)
+        alert.addAction(cancelAction)
+        
+        present(alert, animated: true)
     }
     
     @objc private func favoriteButtonTapped() {
         viewModel.favoriteTapped.accept(())
     }
-    
-    
 }
 
-
+//MARK: - TodayViewController
 class TodayViewController: BaseViewController {
     
     let boxSize = 260
     let spacing = 25
     
     
-    let headerView = HeaderViewController()
+    let headerView = HeaderView()
+    let bottomButtonsView = BottomButtonView()
     
     private let outfitView: UIView = {
         let view = UIView()
@@ -198,19 +233,6 @@ class TodayViewController: BaseViewController {
         view.layer.shadowOpacity = 0.1
         return view
     }()
-    
-//    private let favoriteButton: UIButton = {
-//        let button = UIButton(type: .system)
-//        button.setImage(UIImage(systemName: "star"), for: .normal)
-//        button.tintColor = .systemYellow
-//        button.backgroundColor = .white
-//        button.layer.cornerRadius = 20
-//        button.layer.shadowColor = UIColor.black.cgColor
-//        button.layer.shadowOffset = CGSize(width: 0, height: 2)
-//        button.layer.shadowRadius = 4
-//        button.layer.shadowOpacity = 0.1
-//        return button
-//    }()
     
     private let topImageView = UIImageView().then {
         $0.contentMode = .scaleAspectFill
@@ -277,20 +299,6 @@ class TodayViewController: BaseViewController {
         return label
     }()
 
-//    private let buttonStackView = UIStackView().then {
-//        $0.axis = .horizontal
-//        $0.spacing = 12
-//        $0.distribution = .fill
-//    }
-//    
-//    private let seeAnotherButton = UIButton(type: .system).then {
-//        let config = UIImage.SymbolConfiguration(pointSize: 24, weight: .medium)
-//        $0.setImage(UIImage(systemName: "arrow.clockwise", withConfiguration: config), for: .normal)
-//        $0.tintColor = .white
-//        $0.backgroundColor = UIColor(white: 0.2, alpha: 1.0)
-//        $0.layer.cornerRadius = 20
-//    }
-    
     private let emptyOutfitMessageLabel = UILabel().then {
         $0.numberOfLines = 0
         $0.text = "옷장이 비어있어요!"
@@ -299,19 +307,7 @@ class TodayViewController: BaseViewController {
         $0.textAlignment = .center
         $0.isHidden = true // Initially hidden
     }
-    
-    
-//    private let styleButton = UIButton(type: .system).then {
-//        $0.setTitle("캐주얼", for: .normal)
-//        $0.titleLabel?.font = .systemFont(ofSize: 18, weight: .semibold)
-//        $0.setTitleColor(.white, for: .normal)
-//        $0.backgroundColor = UIColor(white: 0.2, alpha: 1.0)
-//        $0.layer.cornerRadius = 20
-//    }
-    
-    // Add styles array for selection
-    private let styles = ["캐주얼", "포멀", "스포티", "빈티지", "보헤미안", "시크", "프레피", "펑크"]
-    
+
     // MARK: - Properties
     private let viewModel = TodayViewModel()
     
@@ -336,7 +332,7 @@ class TodayViewController: BaseViewController {
         super.setupViews()
         
         // 메인 뷰에 추가되는 뷰들
-        [outfitView, emptyOutfitMessageLabel].forEach {
+        [outfitView, emptyOutfitMessageLabel, headerView, bottomButtonsView].forEach {
             view.addSubview($0)
         }
         
@@ -410,28 +406,6 @@ class TodayViewController: BaseViewController {
             $0.centerX.equalTo(outerImageView)
         }
         
-//        buttonStackView.snp.makeConstraints {
-//            $0.leading.trailing.equalToSuperview().inset(20)
-//            $0.bottom.equalTo(view.safeAreaLayoutGuide).offset(-20)
-//            $0.height.equalTo(60)
-//        }
-//        
-//        // 각 버튼의 크기 비율 설정 (간격 12포인트 고려)
-//        let totalSpacing: CGFloat = 24 // 버튼 사이 간격 2개 (12 * 2)
-//        
-//        styleButton.snp.makeConstraints {
-//            $0.width.equalTo(buttonStackView.snp.width).multipliedBy(0.5).offset(-totalSpacing * 0.5) // 전체 너비의 50%에서 간격의 절반만큼 빼기
-//        }
-//        
-//        favoriteButton.snp.makeConstraints {
-//            $0.width.equalTo(buttonStackView.snp.width).multipliedBy(0.25).offset(-totalSpacing * 0.25) // 전체 너비의 25%에서 간격의 1/4만큼 빼기
-//        }
-//        
-//        seeAnotherButton.snp.makeConstraints {
-//            $0.width.equalTo(buttonStackView.snp.width).multipliedBy(0.25).offset(-totalSpacing * 0.25) // 전체 너비의 25%에서 간격의 1/4만큼 빼기
-//        }
-        
-        // In setupConstraints, set constraints for emptyOutfitMessageLabel
         emptyOutfitMessageLabel.snp.makeConstraints {
             $0.center.equalTo(outfitView)
             $0.leading.trailing.equalToSuperview().inset(20)
@@ -439,9 +413,6 @@ class TodayViewController: BaseViewController {
     }
     
     override func setupBindings() {
-//        seeAnotherButton.rx.tap
-//            .bind(to: viewModel.seeAnotherTapped)
-//            .disposed(by: disposeBag)
         
         viewModel.currentOutfit
             .drive(onNext: { [weak self] outfit in
@@ -466,14 +437,6 @@ class TodayViewController: BaseViewController {
             })
             .disposed(by: disposeBag)
         
-        // Update setupBindings to handle styleButton tap
-//        styleButton.rx.tap
-//            .subscribe(onNext: { [weak self] in
-//                self?.showStyleActionSheet()
-//            })
-//            .disposed(by: disposeBag)
-//        
-//        favoriteButton.addTarget(self, action: #selector(favoriteButtonTapped), for: .touchUpInside)
     }
     
     
@@ -487,13 +450,15 @@ class TodayViewController: BaseViewController {
             shoesImageView.image = nil
             outerImageView.isHidden = true
             outerLabel.isHidden = true
-            favoriteButton.setImage(UIImage(systemName: "star"), for: .normal)
+            // 임시 주석
+//            favoriteButton.setImage(UIImage(systemName: "star"), for: .normal)
             return
         }
         
         // 즐겨찾기 버튼 상태 업데이트
         let starImage = outfit.isFavorite ? "star.fill" : "star"
-        favoriteButton.setImage(UIImage(systemName: starImage), for: .normal)
+        // 임시 주석
+//        favoriteButton.setImage(UIImage(systemName: starImage), for: .normal)
         
         // 실제 이미지 로드
         // 상의
@@ -536,30 +501,6 @@ class TodayViewController: BaseViewController {
         }
     }
     
-    // Add showStyleActionSheet method
-    private func showStyleActionSheet() {
-        let alert = UIAlertController(title: "스타일 선택", message: nil, preferredStyle: .actionSheet)
-        
-        for style in styles {
-            let action = UIAlertAction(title: style, style: .default) { [weak self] _ in
-                self?.styleButton.setTitle(style, for: .normal)
-                // Update selected style in view model
-                if let styleEnum = Style(rawValue: style) {
-                    self?.viewModel.updateSelectedStyle(styleEnum)
-                }
-            }
-            alert.addAction(action)
-        }
-        
-        let cancelAction = UIAlertAction(title: "취소", style: .cancel)
-        alert.addAction(cancelAction)
-        
-        present(alert, animated: true)
-    }
-    
-//    @objc private func favoriteButtonTapped() {
-//        viewModel.favoriteTapped.accept(())
-//    }
 } 
 
 
