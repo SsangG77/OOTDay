@@ -410,6 +410,11 @@ class TodayViewController: BaseViewController {
             $0.center.equalTo(outfitView)
             $0.leading.trailing.equalToSuperview().inset(20)
         }
+        
+        headerView.snp.makeConstraints {
+            $0.top.leading.trailing.equalToSuperview().offset(10)
+        }
+        
     }
     
     override func setupBindings() {
