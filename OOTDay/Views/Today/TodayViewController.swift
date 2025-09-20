@@ -10,10 +10,10 @@ import CoreLocation
 //MARK: - HeaderViewController
 class HeaderView: UIView {
  
+    //MARK: - View
     private let dateLabel = UILabel().then {
         $0.font = .systemFont(ofSize: 24, weight: .bold)
         $0.textColor = .black
-//        $0.text = "Tue, Apr23"
     }
     
     private let weatherLabel = UILabel().then {
@@ -95,12 +95,17 @@ class HeaderView: UIView {
 //MARK: - BottomButtonViewController
 class BottomButtonView: UIView {
     
-    private let viewModel = TodayViewModel()
+    var viewModel: TodayViewModel
     
-    private let styles = ["캐주얼", "포멀", "스포티", "빈티지", "보헤미안", "시크", "프레피", "펑크"]
+//    private let styles = ["캐주얼", "포멀", "스포티", "빈티지", "보헤미안", "시크", "프레피", "펑크"]
     
+    //MARK: - properties
     let disposeBag = DisposeBag()
     
+    var showStyleActionSheet: () -> Void
+    
+    
+    //MARK: - View
     private let buttonStackView = UIStackView().then {
         $0.axis = .horizontal
         $0.spacing = 12
@@ -128,7 +133,7 @@ class BottomButtonView: UIView {
         $0.layer.cornerRadius = 20
     }
     
-    private let styleButton = UIButton(type: .system).then {
+    let styleButton = UIButton(type: .system).then {
         $0.setTitle("캐주얼", for: .normal)
         $0.titleLabel?.font = .systemFont(ofSize: 18, weight: .semibold)
         $0.setTitleColor(.white, for: .normal)
@@ -136,8 +141,13 @@ class BottomButtonView: UIView {
         $0.layer.cornerRadius = 20
     }
     
-    required override init(frame: CGRect) {
-        super.init(frame: frame)
+    
+    
+    init(viewModel: TodayViewModel, showStyleActionSheet: @escaping () -> Void) {
+        
+        self.viewModel = viewModel
+        self.showStyleActionSheet = showStyleActionSheet
+        super.init(frame: .zero)
         
         
         addSubview(buttonStackView)
@@ -189,25 +199,25 @@ class BottomButtonView: UIView {
     }
     
     
-    private func showStyleActionSheet() {
-        let alert = UIAlertController(title: "스타일 선택", message: nil, preferredStyle: .actionSheet)
-        
-        for style in styles {
-            let action = UIAlertAction(title: style, style: .default) { [weak self] _ in
-                self?.styleButton.setTitle(style, for: .normal)
-                // Update selected style in view model
-                if let styleEnum = Style(rawValue: style) {
-                    self?.viewModel.updateSelectedStyle(styleEnum)
-                }
-            }
-            alert.addAction(action)
-        }
-        
-        let cancelAction = UIAlertAction(title: "취소", style: .cancel)
-        alert.addAction(cancelAction)
-        
-        present(alert, animated: true)
-    }
+//    private func showStyleActionSheet() {
+//        let alert = UIAlertController(title: "스타일 선택", message: nil, preferredStyle: .actionSheet)
+//        
+//        for style in styles {
+//            let action = UIAlertAction(title: style, style: .default) { [weak self] _ in
+//                self?.styleButton.setTitle(style, for: .normal)
+//                // Update selected style in view model
+//                if let styleEnum = Style(rawValue: style) {
+//                    self?.viewModel.updateSelectedStyle(styleEnum)
+//                }
+//            }
+//            alert.addAction(action)
+//        }
+//        
+//        let cancelAction = UIAlertAction(title: "취소", style: .cancel)
+//        alert.addAction(cancelAction)
+//        
+//        present(alert, animated: true)
+//    }
     
     @objc private func favoriteButtonTapped() {
         viewModel.favoriteTapped.accept(())
@@ -220,9 +230,12 @@ class TodayViewController: BaseViewController {
     let boxSize = 260
     let spacing = 25
     
+    // MARK: - Properties
+    private let viewModel = TodayViewModel()
+    private let styles = ["캐주얼", "포멀", "스포티", "빈티지", "보헤미안", "시크", "프레피", "펑크"]
     
     let headerView = HeaderView()
-    let bottomButtonsView = BottomButtonView()
+    var bottomButtonsView: BottomButtonView!
     
     private let outfitView: UIView = {
         let view = UIView()
@@ -308,13 +321,36 @@ class TodayViewController: BaseViewController {
         $0.isHidden = true // Initially hidden
     }
 
-    // MARK: - Properties
-    private let viewModel = TodayViewModel()
+    
+    
     
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = UIColor(red: 247/255, green: 143/255, blue: 67/255, alpha: 1)
+        // Initialize bottomButtonsView now that self is available
+        bottomButtonsView = BottomButtonView(
+            viewModel: viewModel,
+            showStyleActionSheet: { [weak self] in
+                guard let self = self else { return }
+                let alert = UIAlertController(title: "스타일 선택", message: nil, preferredStyle: .actionSheet)
+                for style in self.styles {
+                    let action = UIAlertAction(title: style, style: .default) { [weak self] _ in
+                        guard let self = self else { return }
+                        self.bottomButtonsView.styleButton.setTitle(style, for: .normal)
+                        if let styleEnum = Style(rawValue: style) {
+                            self.viewModel.updateSelectedStyle(styleEnum)
+                        }
+                    }
+                    alert.addAction(action)
+                }
+                let cancelAction = UIAlertAction(title: "취소", style: .cancel)
+                alert.addAction(cancelAction)
+                self.present(alert, animated: true)
+            }
+        )
+        self.bottomButtonsView.viewModel = self.viewModel
+
         
         // 기본 스타일을 캐주얼로 설정
         viewModel.updateSelectedStyle(.casual)
@@ -415,6 +451,12 @@ class TodayViewController: BaseViewController {
             $0.top.leading.trailing.equalToSuperview().offset(10)
         }
         
+        bottomButtonsView.snp.makeConstraints {
+            $0.leading.trailing.equalToSuperview()
+            $0.bottom.equalTo(view.safeAreaLayoutGuide)
+            $0.height.equalTo(100)
+        }
+        
     }
     
     override func setupBindings() {
@@ -512,3 +554,4 @@ class TodayViewController: BaseViewController {
 #Preview {
     TodayViewController()
 }
+
