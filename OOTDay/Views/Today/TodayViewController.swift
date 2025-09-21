@@ -6,224 +6,6 @@ import Then
 import WeatherKit
 import CoreLocation
 
-
-//MARK: - HeaderViewController
-class HeaderView: UIView {
- 
-    //MARK: - View
-    private let dateLabel = UILabel().then {
-        $0.font = .systemFont(ofSize: 24, weight: .bold)
-        $0.textColor = .black
-    }
-    
-    private let weatherLabel = UILabel().then {
-        $0.font = .systemFont(ofSize: 24, weight: .bold)
-        $0.textColor = .black
-    }
-    
-    private let weatherIcon = UIImageView().then {
-        $0.image = UIImage(systemName: "sun.max.fill")
-        $0.tintColor = .black
-        $0.contentMode = .scaleAspectFit
-    }
-    
-    private let titleLabel = UILabel().then {
-        $0.font = .systemFont(ofSize: 36, weight: .bold)
-        $0.text = "Today's Outfit"
-        $0.textColor = .black
-    }
-    
-    
-    private let weatherManager = WeatherManager()
-    
-    required override init(frame: CGRect) {
-        super.init(frame: frame)
-        
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "E, MMM d"
-        dateLabel.text = dateFormatter.string(from: Date())
-        
-        
-        [dateLabel, weatherIcon, weatherLabel, titleLabel].forEach {
-            addSubview($0)
-        }
-        
-        dateLabel.snp.makeConstraints {
-            $0.top.equalToSuperview()
-            $0.leading.equalToSuperview().offset(20)
-        }
-        
-        weatherIcon.snp.makeConstraints {
-            $0.centerY.equalTo(dateLabel)
-            $0.trailing.equalTo(weatherLabel.snp.leading).offset(-4)
-            $0.width.height.equalTo(24)
-        }
-        
-        weatherLabel.snp.makeConstraints {
-            $0.centerY.equalTo(dateLabel)
-            $0.trailing.equalToSuperview().offset(-20)
-        }
-        
-        titleLabel.snp.makeConstraints {
-            $0.top.equalTo(dateLabel.snp.bottom).offset(8)
-            $0.leading.equalToSuperview().offset(20)
-        }
-        
-        updateWeatherInfo()
-        
-    }
-    
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
-    
-    // MARK: - Private Methods
-    private func updateWeatherInfo() {
-        weatherManager.fetchWeather { [weak self] weather in
-            guard let self = self, let weather = weather else { return }
-            DispatchQueue.main.async {
-                let temperature = weather.currentWeather.temperature.value
-                let roundedTemp = round(temperature * 10) / 10  // 소수점 한 자리까지 반올림
-                
-                self.weatherLabel.text = "\(roundedTemp)°"
-            }
-        }
-    }
-}
-
-//MARK: - BottomButtonViewController
-class BottomButtonView: UIView {
-    
-    var viewModel: TodayViewModel
-    
-//    private let styles = ["캐주얼", "포멀", "스포티", "빈티지", "보헤미안", "시크", "프레피", "펑크"]
-    
-    //MARK: - properties
-    let disposeBag = DisposeBag()
-    
-    var showStyleActionSheet: () -> Void
-    
-    
-    //MARK: - View
-    private let buttonStackView = UIStackView().then {
-        $0.axis = .horizontal
-        $0.spacing = 12
-        $0.distribution = .fill
-    }
-    
-    private let favoriteButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.setImage(UIImage(systemName: "star"), for: .normal)
-        button.tintColor = .systemYellow
-        button.backgroundColor = .white
-        button.layer.cornerRadius = 20
-        button.layer.shadowColor = UIColor.black.cgColor
-        button.layer.shadowOffset = CGSize(width: 0, height: 2)
-        button.layer.shadowRadius = 4
-        button.layer.shadowOpacity = 0.1
-        return button
-    }()
-    
-    private let seeAnotherButton = UIButton(type: .system).then {
-        let config = UIImage.SymbolConfiguration(pointSize: 24, weight: .medium)
-        $0.setImage(UIImage(systemName: "arrow.clockwise", withConfiguration: config), for: .normal)
-        $0.tintColor = .white
-        $0.backgroundColor = UIColor(white: 0.2, alpha: 1.0)
-        $0.layer.cornerRadius = 20
-    }
-    
-    let styleButton = UIButton(type: .system).then {
-        $0.setTitle("캐주얼", for: .normal)
-        $0.titleLabel?.font = .systemFont(ofSize: 18, weight: .semibold)
-        $0.setTitleColor(.white, for: .normal)
-        $0.backgroundColor = UIColor(white: 0.2, alpha: 1.0)
-        $0.layer.cornerRadius = 20
-    }
-    
-    
-    
-    init(viewModel: TodayViewModel, showStyleActionSheet: @escaping () -> Void) {
-        
-        self.viewModel = viewModel
-        self.showStyleActionSheet = showStyleActionSheet
-        super.init(frame: .zero)
-        
-        
-        addSubview(buttonStackView)
-        
-        [styleButton, favoriteButton, seeAnotherButton].forEach {
-            buttonStackView.addArrangedSubview($0)
-        }
-        
-        buttonStackView.snp.makeConstraints {
-            $0.leading.trailing.equalToSuperview().inset(20)
-            $0.bottom.equalToSuperview().offset(-20)
-            $0.height.equalTo(60)
-        }
-        
-        // 각 버튼의 크기 비율 설정 (간격 12포인트 고려)
-        let totalSpacing: CGFloat = 24 // 버튼 사이 간격 2개 (12 * 2)
-        
-        styleButton.snp.makeConstraints {
-            $0.width.equalTo(buttonStackView.snp.width).multipliedBy(0.5).offset(-totalSpacing * 0.5) // 전체 너비의 50%에서 간격의 절반만큼 빼기
-        }
-        
-        favoriteButton.snp.makeConstraints {
-            $0.width.equalTo(buttonStackView.snp.width).multipliedBy(0.25).offset(-totalSpacing * 0.25) // 전체 너비의 25%에서 간격의 1/4만큼 빼기
-        }
-        
-        seeAnotherButton.snp.makeConstraints {
-            $0.width.equalTo(buttonStackView.snp.width).multipliedBy(0.25).offset(-totalSpacing * 0.25) // 전체 너비의 25%에서 간격의 1/4만큼 빼기
-        }
-        
-        
-        
-        seeAnotherButton.rx.tap
-            .bind(to: viewModel.seeAnotherTapped)
-            .disposed(by: disposeBag)
-        
-        styleButton.rx.tap
-            .subscribe(onNext: { [weak self] in
-                self?.showStyleActionSheet()
-            })
-            .disposed(by: disposeBag)
-        
-        favoriteButton.addTarget(self, action: #selector(favoriteButtonTapped), for: .touchUpInside)
-        
-        
-    }
-    
-    required init(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
-    
-//    private func showStyleActionSheet() {
-//        let alert = UIAlertController(title: "스타일 선택", message: nil, preferredStyle: .actionSheet)
-//        
-//        for style in styles {
-//            let action = UIAlertAction(title: style, style: .default) { [weak self] _ in
-//                self?.styleButton.setTitle(style, for: .normal)
-//                // Update selected style in view model
-//                if let styleEnum = Style(rawValue: style) {
-//                    self?.viewModel.updateSelectedStyle(styleEnum)
-//                }
-//            }
-//            alert.addAction(action)
-//        }
-//        
-//        let cancelAction = UIAlertAction(title: "취소", style: .cancel)
-//        alert.addAction(cancelAction)
-//        
-//        present(alert, animated: true)
-//    }
-    
-    @objc private func favoriteButtonTapped() {
-        viewModel.favoriteTapped.accept(())
-    }
-}
-
 //MARK: - TodayViewController
 class TodayViewController: BaseViewController {
     
@@ -235,7 +17,27 @@ class TodayViewController: BaseViewController {
     private let styles = ["캐주얼", "포멀", "스포티", "빈티지", "보헤미안", "시크", "프레피", "펑크"]
     
     let headerView = HeaderView()
-    var bottomButtonsView: BottomButtonView!
+    private lazy var bottomButtonsView: BottomButtonView = {
+        BottomButtonView(
+            viewModel: viewModel,
+            showStyleActionSheet: { [weak self] in
+                guard let self = self else { return }
+                let alert = UIAlertController(title: "스타일 선택", message: nil, preferredStyle: .actionSheet)
+                for style in self.styles {
+                    let action = UIAlertAction(title: style, style: .default) { [weak self] _ in
+                        guard let self = self else { return }
+                        self.bottomButtonsView.styleButton.setTitle(style, for: .normal)
+                        if let styleEnum = Style(rawValue: style) {
+                            self.viewModel.updateSelectedStyle(styleEnum)
+                        }
+                    }
+                    alert.addAction(action)
+                }
+                alert.addAction(UIAlertAction(title: "취소", style: .cancel))
+                self.present(alert, animated: true)
+            }
+        )
+    }()
     
     private let outfitView: UIView = {
         let view = UIView()
@@ -327,30 +129,12 @@ class TodayViewController: BaseViewController {
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = UIColor(red: 247/255, green: 143/255, blue: 67/255, alpha: 1)
-        // Initialize bottomButtonsView now that self is available
-        bottomButtonsView = BottomButtonView(
-            viewModel: viewModel,
-            showStyleActionSheet: { [weak self] in
-                guard let self = self else { return }
-                let alert = UIAlertController(title: "스타일 선택", message: nil, preferredStyle: .actionSheet)
-                for style in self.styles {
-                    let action = UIAlertAction(title: style, style: .default) { [weak self] _ in
-                        guard let self = self else { return }
-                        self.bottomButtonsView.styleButton.setTitle(style, for: .normal)
-                        if let styleEnum = Style(rawValue: style) {
-                            self.viewModel.updateSelectedStyle(styleEnum)
-                        }
-                    }
-                    alert.addAction(action)
-                }
-                let cancelAction = UIAlertAction(title: "취소", style: .cancel)
-                alert.addAction(cancelAction)
-                self.present(alert, animated: true)
-            }
-        )
-        self.bottomButtonsView.viewModel = self.viewModel
+        setupViews()
+        setupConstraints()
+        setupBindings()
 
+        
+        view.backgroundColor = UIColor(red: 247/255, green: 143/255, blue: 67/255, alpha: 1)
         
         // 기본 스타일을 캐주얼로 설정
         viewModel.updateSelectedStyle(.casual)
@@ -448,7 +232,8 @@ class TodayViewController: BaseViewController {
         }
         
         headerView.snp.makeConstraints {
-            $0.top.leading.trailing.equalToSuperview().offset(10)
+            $0.top.equalToSuperview().offset(100)
+            $0.leading.trailing.equalToSuperview().offset(10)
         }
         
         bottomButtonsView.snp.makeConstraints {
@@ -480,7 +265,7 @@ class TodayViewController: BaseViewController {
         // Hide the message label when an outfit is available
         viewModel.currentOutfit
             .drive(onNext: { [weak self] outfit in
-                self?.emptyOutfitMessageLabel.isHidden = outfit != nil
+                self?.emptyOutfitMessageLabel.isHidden = outfit == nil
             })
             .disposed(by: disposeBag)
         
